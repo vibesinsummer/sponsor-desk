@@ -3,7 +3,7 @@
 5대그룹·대기업 뉴스, 연합뉴스 실시간 인사·부고, 영업 기회와 부정이슈, 광고·협찬 동향을 한 화면에 모아 보는 사이트입니다.
 **모두 무료 서비스로만 돌아가며**, PC를 꺼 두어도 정해진 시간에 자동으로 업데이트됩니다.
 
-- **사이트 주소: https://combon.vercel.app**
+- **사이트 주소: https://combon.vercel.app** (예전 GitHub Pages 주소는 사용 중지)
 - 구조: GitHub Actions가 정해진 시간에 수집 → 결과를 이 저장소에 저장 → Vercel(프로젝트 `combon`)이 저장을 감지해 자동 재배포
 - Vercel 설정은 `vercel.json`(빌드: `node build.js`, 결과 폴더: `_site`)에 들어 있어 Vercel 화면에서 따로 바꿀 것이 없습니다.
 

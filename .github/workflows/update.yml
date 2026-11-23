@@ -24,10 +24,9 @@ on:
     branches: [main]
     paths: ["index.html", "config.js", "collect.js", "briefing.js", "build.js"]
 
+# 사이트 게시는 Vercel(combon.vercel.app)이 이 저장소의 새 저장을 감지해 자동으로 합니다.
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   group: update
@@ -36,9 +35,6 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,7 +50,7 @@ jobs:
             "schedule:0 1 * * *") MODE=people ;;
             "schedule:0 7 * * *") MODE=full ;;
             workflow_dispatch:*)  MODE="${{ github.event.inputs.mode }}" ;;
-            *)                    MODE=none ;;   # 코드만 고친 경우: 수집 없이 사이트만 다시 만듦
+            *)                    MODE=none ;;   # 코드만 고친 경우: 수집 없이 사이트 빌드만 점검
           esac
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "실행 종류: $MODE"
@@ -75,14 +71,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data.json briefing.json
           git diff --cached --quiet || git commit -m "자동 업데이트 (${{ steps.mode.outputs.mode }})"
+          git pull --rebase
           git push
 
-      - name: 사이트 만들기
+      # 사이트 파일이 제대로 만들어지는지 점검만 함 (실제 게시는 Vercel)
+      - name: 사이트 빌드 점검
         run: node build.js
-
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - id: deploy
-        uses: actions/deploy-pages@v4
