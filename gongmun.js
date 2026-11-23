@@ -205,6 +205,7 @@ const TEMPLATE = {
       const holder = document.createElement("div");
       holder.style.cssText = "position:fixed;left:-10000px;top:0;";
       holder.innerHTML = paper();
+      holder.firstElementChild.classList.add("gm-print"); // 그림자 제거·높이 살짝 줄여 빈 2쪽 방지
       document.body.appendChild(holder);
       const [y, m] = st.month.split("-");
       const name = `${st.co}_${y}년${+m}월_협찬금청구공문.pdf`.replace(/[\\/:*?"<>|]/g, "");
