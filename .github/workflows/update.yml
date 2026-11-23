@@ -1,0 +1,88 @@
+# 협찬영업 데스크 자동 업데이트
+# GitHub 예약 시각은 UTC 기준입니다. 한국시간 = UTC + 9시간
+#   한국 09:00 = UTC 00:00  → 전체 수집 + 브리핑 작성
+#   한국 10:00 = UTC 01:00  → 인사·부고만 수집
+#   한국 16:00 = UTC 07:00  → 인사·부고 포함 전체 수집 (브리핑은 오전 것 유지)
+# GitHub 사정에 따라 실제 실행은 몇 분~30분 정도 늦을 수 있습니다.
+
+name: 자동 업데이트
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+    - cron: "0 1 * * *"
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "실행 종류 (brief = 전체+브리핑, full = 전체, people = 인사·부고만)"
+        required: true
+        default: "brief"
+        type: choice
+        options: [brief, full, people]
+  push:
+    branches: [main]
+    paths: ["index.html", "config.js", "collect.js", "briefing.js", "build.js"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 실행 종류 정하기
+        id: mode
+        run: |
+          case "${{ github.event_name }}:${{ github.event.schedule }}" in
+            "schedule:0 0 * * *") MODE=brief ;;
+            "schedule:0 1 * * *") MODE=people ;;
+            "schedule:0 7 * * *") MODE=full ;;
+            workflow_dispatch:*)  MODE="${{ github.event.inputs.mode }}" ;;
+            *)                    MODE=none ;;   # 코드만 고친 경우: 수집 없이 사이트만 다시 만듦
+          esac
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "실행 종류: $MODE"
+
+      - name: 수집
+        if: steps.mode.outputs.mode != 'none'
+        run: |
+          case "${{ steps.mode.outputs.mode }}" in
+            brief)  node collect.js brief ;;
+            people) node collect.js people ;;
+            *)      node collect.js ;;
+          esac
+
+      - name: 수집 결과 저장 (다음 실행 때 비교·보존용)
+        if: steps.mode.outputs.mode != 'none'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.json briefing.json
+          git diff --cached --quiet || git commit -m "자동 업데이트 (${{ steps.mode.outputs.mode }})"
+          git push
+
+      - name: 사이트 만들기
+        run: node build.js
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
