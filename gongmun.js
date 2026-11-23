@@ -7,14 +7,17 @@
 //  ▶ 문구를 바꾸거나 새 프로그램·캠페인·배너를 추가하려면 아래 PROGRAMS 에 한 덩어리 추가
 //    type 에 위 3종 중 하나를 적으면 해당 유형 메뉴에 나타납니다.
 //    {중괄호} 자리는 자동으로 채워집니다:
-//    {프로그램} {횟수} {날짜목록} {금액} {부가세}
+//    {프로그램} {횟수} {날짜목록} {금액} {부가세} {연} {월} {노출횟수}
+//  ▶ inputs: 이 양식에만 필요한 입력칸 — dates(노출 날짜) / schedule(편성표) / count(노출 횟수)
 //  ▶ weekday: 방송 요일 (0=일 1=월 … 5=금 6=토) → 선택한 달의 방송일을 자동으로 채움
 //  ▶ 어떤 유형에 등록된 양식이 하나도 없으면 '양식 준비 중'으로 표시되고 PDF가 만들어지지 않습니다.
 // ─────────────────────────────────────────────────────────────
 const TYPES = ["프로그램 협찬", "캠페인 협찬", "배너 협찬"];
 const PROGRAMS = {
+  // ── 프로그램 협찬 ──────────────────────────
   "장르가머니": {
-    type: "프로그램 협찬",
+    type: "프로그램 협찬", file: "장르가머니",
+    inputs: ["dates"],          // 로고 노출 날짜 (방송 요일로 자동 채움)
     weekday: 5,
     title: "JTBC <{프로그램}> 프로그램 협찬 요청의 건",
     body: [
@@ -29,6 +32,62 @@ const PROGRAMS = {
       ["요청 금액", "{금액}원 (부가세 {부가세})"],
     ],
     note: "※ <{프로그램}> 프로그램 소개서 별첨.",
+  },
+  "예능 프로그램": {
+    type: "프로그램 협찬", file: "예능프로그램",
+    inputs: ["schedule"],       // 편성표 (프로그램명 | 편성 | 개요 | 방영일) — 줄 수가 노출 횟수
+    title: "JTBC 예능프로그램 협찬 요청의 건",
+    body: [
+      "1. 국내외 불확실한 경제 상황 속에서도 대한민국 경제발전을 위해 각고의 노력을 기울이며, 국민의 금융 동반자로서 따뜻하고 신뢰받는 서비스를 제공해 오신 귀사의 노고에 깊은 존경과 감사를 드립니다.",
+      "2. 저희 JTBC는 지금까지의 경험을 바탕으로, 보다 알차고 의미있는 프로그램을 지속적으로 기획 및 제작하여 사회적으로 기여할 수 있도록 노력하겠습니다. 또한, 언제나처럼 책임있는 언론의 역할을 충실히 할 것을 약속드립니다. 많은 관심과 질책을 부탁드립니다.",
+      "3. JTBC는 창의적 기획과 진정성 있는 스토리텔링을 바탕으로 시청자들의 삶 속에 따뜻한 울림을 전하는 예능 프로그램을 제작해오고 있습니다. 웃음이라는 형식을 통해 세대를 아우르는 공감의 가치를 전하는 것이 JTBC 예능이 추구하는 중심 철학입니다.",
+      "4. 이에 귀사의 사회공헌 철학과 금융 브랜드 이미지가 JTBC의 예능 프로그램의 취지와 깊이 맞닿아 있어 협찬 참여를 정중히 제안드리오니, 모쪼록 긍정적인 검토와 적극적인 협조를 부탁드립니다.",
+      "감사합니다.",
+    ],
+    items: [
+      ["제안 내용", "JTBC 예능 프로그램 협찬"],
+      ["제공 내역", "프로그램 종료시 기업로고 노출 {횟수}회"],
+      "TABLE",                  // 편성표가 들어가는 자리
+      ["요청 금액", "{금액}원 (부가세 {부가세})"],
+    ],
+    tableHead: ["프로그램명", "편성", "개요", "방영일"],
+    schedule: "아는형님 | 토 21:00 | 형님학교에서 펼쳐지는 버라이어티 | \n톡파원25시 | 월 20:50 | 톡파원들이 전하는 각 나라 소식 | ",
+  },
+  // ── 캠페인 협찬 ────────────────────────────
+  "환경캠페인": {
+    type: "캠페인 협찬", file: "환경캠페인",
+    inputs: ["count"],          // 월 노출 횟수
+    count: "23",
+    title: "JTBC 환경캠페인 협찬 요청의 건",
+    body: [
+      "1. 국내외 불확실한 경제 상황 속에서도 대한민국 경제발전을 위해 각고의 노력을 기울이고 계신 귀사의 무궁한 발전을 기원합니다.",
+      "2. 저희 JTBC는 지금까지의 경험을 바탕으로, 보다 알차고 의미있는 프로그램을 지속적으로 기획 및 제작하여 사회적으로 기여할 수 있도록 노력하겠습니다. 또한, 언제나처럼 책임있는 언론의 역할을 충실히 할 것을 약속드립니다. 많은 관심과 질책을 부탁드립니다.",
+      "3. JTBC는 기후위기와 직면한 현대사회의 해법을 실천하고자 하는 의지를 담아 ‘JTBC 환경캠페인’을 진행하고 있습니다. 환경캠페인의 메인 슬로건은 ‘Coloring Your World, Coloring You Earth!’로서, 잃어가고 있는 지구의 색을 회복하고 찾자는 의미입니다. ‘지구-미래-내일’을 연결하는 주제를 지속적으로 알려 시청자들과 국민의 공감을 이끌어 내겠습니다. 이는 사회적 공기(公器)로서의 역할과 사회의 善순환 기능을 방기하지 않겠다는 저희의 다짐이기도 합니다.",
+      "4. 이에 다음과 같이 귀사의 캠페인 제작 및 방송 편성에 따른 협찬 지원을 정중히 요청드리는 바입니다. 모쪼록 긍정적인 검토와 적극적인 협조를 부탁드립니다. 감사합니다.",
+    ],
+    items: [
+      ["제안 내용", "JTBC 환경캠페인 제작 편성"],
+      ["제공 내역", "캠페인 영상 內 협찬 기업 로고 노출 등"],
+      ["요청 금액", "{금액}원 (부가세 {부가세})"],
+      ["노출 횟수", "월 {노출횟수}회 전후 (60초 기준)"],
+    ],
+  },
+  // ── 배너 협찬 ──────────────────────────────
+  "온라인 배너": {
+    type: "배너 협찬", file: "온라인 배너",
+    inputs: [],                 // 게재 기간은 '협찬 월'로 자동
+    title: "JTBC 온라인 배너광고 게재 요청의 건",
+    body: [
+      "1. 국내외 불확실한 경제 상황 속에서도 대한민국 경제발전을 위해 각고의 노력을 기울이고 계신 귀사의 무궁한 발전을 기원합니다.",
+      "2. 저희 JTBC는 지금까지의 경험을 바탕으로, 보다 알차고 의미있는 프로그램을 지속적으로 기획 및 제작하여 사회적으로 기여할 수 있도록 노력하겠습니다. 또한, 언제나처럼 책임있는 언론의 역할을 충실히 할 것을 약속드립니다. 많은 관심과 질책을 부탁드립니다.",
+      "3. 이에 다음과 같이 귀사의 온라인 배너광고 참여를 정중히 요청드리는 바입니다. 모쪼록 긍정적인 검토를 부탁드리며, 양사간 돈독한 우호관계를 위한 좋은 기회가 되기를 희망합니다. 감사합니다.",
+    ],
+    items: [
+      ["제안 내용", "JTBC 뉴스홈페이지 및 모바일 배너 광고"],
+      ["게재 기간", "{연}년 {월}월중"],
+      ["요청 금액", "{금액}원 (부가세 {부가세})"],
+      ["광고 규격", "PC – 1216 × 100 px / 모바일 – 353 × 100 px (메인 홈 / 메인 홈)"],
+    ],
   },
 };
 
@@ -68,21 +127,31 @@ const PROGRAMS = {
   const DEFAULT_SENDER = { signer: "", addr: "", prefix: "JTBC" };
   const firstProgram = Object.keys(PROGRAMS)[0];
   const st = {
-    co: "", ref: "홍보실", type: PROGRAMS[firstProgram].type, program: firstProgram, month: thisMonth(), dates: "", amount: "", vat: "별도", date: today(), docnum: "",
+    co: "", ref: "홍보실", schedule: "", count: "", type: PROGRAMS[firstProgram].type, program: firstProgram, month: thisMonth(), dates: "", amount: "", vat: "별도", date: today(), docnum: "",
     sender: Object.assign({}, DEFAULT_SENDER, LS.get("sender", {})),
     logo: LS.get("logo", null), seal: LS.get("seal", null),
   };
-  st.dates = airDates(st.month, PROGRAMS[st.program].weekday);
+  function resetForProgram() {
+    const p = PROGRAMS[st.program];
+    st.dates = airDates(st.month, p.weekday);
+    st.schedule = LS.get("schedule." + st.program, p.schedule || "");
+    st.count = LS.get("count." + st.program, p.count || "");
+  }
+  resetForProgram();
   st.docnum = LS.get("lastDocnum", "");
 
   const P = () => PROGRAMS[st.program] || PROGRAMS[firstProgram];
+  const has = (k) => (P().inputs || []).includes(k);
+  const scheduleRows = () => st.schedule.split("\n").map((l) => l.split("|").map((c) => c.trim())).filter((r) => r[0]);
   const namesOf = (t) => Object.keys(PROGRAMS).filter((k) => PROGRAMS[k].type === t);
   const typeReady = () => namesOf(st.type).length > 0;
   const amountNum = () => +String(st.amount).replace(/[^0-9]/g, "") || 0;
   function fill(t) {
     const list = st.dates.split(",").map((s) => s.trim()).filter(Boolean);
+    const rows = scheduleRows();
+    const [yy, mm] = st.month.split("-").map(Number);
     const amt = amountNum();
-    const map = { 프로그램: st.program, 횟수: list.length || "○", 날짜목록: list.join(", ") || "○/○", 금액: amt ? amt.toLocaleString("ko-KR") : "", 부가세: st.vat };
+    const map = { 프로그램: st.program, 연: yy || "", 월: mm || "", 노출횟수: st.count || "○", 횟수: (has("schedule") ? rows.length : list.length) || "○", 날짜목록: list.join(", ") || "○/○", 금액: amt ? amt.toLocaleString("ko-KR") : "", 부가세: st.vat };
     return t.replace(/\{(\S+?)\}/g, (_, k) => (k in map ? map[k] : _));
   }
   function docCode() {
@@ -110,7 +179,7 @@ const PROGRAMS = {
       <div class="gm-body">
         ${p.body.map((t) => `<p>${esc(fill(t))}</p>`).join("")}
         <p class="gm-center">- 다&nbsp;&nbsp;&nbsp;음 -</p>
-        ${p.items.map(([k, v]) => `<p class="gm-item">□ ${esc(k)} : ${esc(fill(v))}</p>`).join("")}
+        ${p.items.map((it) => it === "TABLE" ? schedTable(p) : `<p class="gm-item">□ ${esc(it[0])} : ${esc(fill(it[1]))}</p>`).join("")}
         ${p.note ? `<p class="gm-note2">${esc(fill(p.note))}</p>` : ""}
       </div>
       <div class="gm-date">${esc(dateK)}</div>
@@ -118,6 +187,11 @@ const PROGRAMS = {
     </div>`;
   }
 
+  function schedTable(p) {
+    const head = p.tableHead || ["프로그램명", "편성", "개요", "방영일"];
+    return `<table class="gm-tbl"><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr>${
+      scheduleRows().map((r) => `<tr>${head.map((_, i) => `<td>${esc(r[i] || "")}</td>`).join("")}</tr>`).join("")}</table>`;
+  }
   function field(id, label, val, attrs = "") {
     return `<label class="gm-f"><span>${label}</span><input id="${id}" value="${esc(val)}" ${attrs}></label>`;
   }
@@ -153,7 +227,9 @@ const PROGRAMS = {
               ${field("gm_month", "협찬 월", st.month, 'type="month"')}
               ${field("gm_date", "문서 날짜", st.date, 'type="date"')}
             </div>
-            ${field("gm_dates", "로고 노출 날짜 (쉼표로 구분, 자동 채움)", st.dates, 'placeholder="예: 10/24, 10/31"')}
+            ${has("dates") ? field("gm_dates", "로고 노출 날짜 (쉼표로 구분, 자동 채움)", st.dates, 'placeholder="예: 10/24, 10/31"') : ""}
+            ${has("count") ? field("gm_count", "월 노출 횟수", st.count, 'inputmode="numeric" placeholder="예: 23"') : ""}
+            ${has("schedule") ? `<label class="gm-f"><span>편성표 — 한 줄에 한 프로그램, 칸은 | 로 구분 (프로그램명 | 편성 | 개요 | 방영일)</span><textarea id="gm_schedule" rows="4">${esc(st.schedule)}</textarea></label>` : ""}
             <div class="gm-row">
               ${field("gm_amount", "요청 금액(원)", amt ? amt.toLocaleString("ko-KR") : "", 'inputmode="numeric" placeholder="예: 10,000,000"')}
               <label class="gm-f"><span>부가세</span><select id="gm_vat"><option ${st.vat === "별도" ? "selected" : ""}>별도</option><option ${st.vat === "포함" ? "selected" : ""}>포함</option></select></label>
@@ -226,7 +302,7 @@ const PROGRAMS = {
       holder.firstElementChild.classList.add("gm-print"); // 그림자 제거·높이 살짝 줄여 빈 2쪽 방지
       document.body.appendChild(holder);
       const ymd = (st.date || "").replace(/-/g, "");
-      const name = `${ymd}_JTBC ${st.program} ${st.type.replace(" 협찬", "")} 협찬 공문_${st.co}.pdf`.replace(/[\\/:*?"<>|]/g, "");
+      const name = `${ymd}_JTBC ${P().file || st.program} 협찬 공문_${st.co}.pdf`.replace(/[\\/:*?"<>|]/g, "");
       await window.html2pdf().set({
         margin: 0, filename: name,
         image: { type: "jpeg", quality: 0.98 },
@@ -249,7 +325,9 @@ const PROGRAMS = {
     const k = id.slice(3);
     if (k === "amount") { const n = e.target.value.replace(/[^0-9]/g, ""); st.amount = n; e.target.value = n ? (+n).toLocaleString("ko-KR") : ""; }
     else st[k] = e.target.value;
-    if (k === "month" || k === "program") { st.dates = airDates(st.month, P().weekday); setVal("gm_dates", st.dates); }
+    if (k === "program") { resetForProgram(); window.dispatchEvent(new Event("gm-rerender")); return; }
+    if (k === "month") { st.dates = airDates(st.month, P().weekday); setVal("gm_dates", st.dates); }
+    if (k === "schedule" || k === "count") LS.set(k + "." + st.program, st[k]);
     if (k === "co") { // 이 협찬처에 예전에 보낸 값 불러오기
       const prev = LS.get("co." + st.co, null);
       if (prev) {
@@ -269,7 +347,7 @@ const PROGRAMS = {
     document.addEventListener("input", (e) => { if (e.target.closest && e.target.closest("#gmForm")) onInput(e); });
     document.addEventListener("change", (e) => {
       const id = e.target.id || "";
-      if (id === "gm_type") { st.type = e.target.value.replace(" (양식 준비 중)", ""); const n = namesOf(st.type); if (n.length) { st.program = n[0]; st.dates = airDates(st.month, P().weekday); } window.dispatchEvent(new Event("gm-rerender")); return; }
+      if (id === "gm_type") { st.type = e.target.value.replace(" (양식 준비 중)", ""); const n = namesOf(st.type); if (n.length) { st.program = n[0]; resetForProgram(); } window.dispatchEvent(new Event("gm-rerender")); return; }
       if (["gm_vat", "gm_month", "gm_date", "gm_program"].includes(id)) onInput(e);
       if (id.startsWith("gm_img_") && e.target.files[0]) {
         const key = id.slice(7), r = new FileReader();
