@@ -27,6 +27,7 @@ fs.mkdirSync(out, { recursive: true });
 fs.writeFileSync(path.join(out, "index.html"), html);
 fs.copyFileSync(path.join(__dirname, "data.json"), path.join(out, "data.json"));
 fs.copyFileSync(path.join(__dirname, "gongmun.js"), path.join(out, "gongmun.js")); // 공문 작성 탭
+fs.cpSync(path.join(__dirname, "assets"), path.join(out, "assets"), { recursive: true }); // 공문 로고·주소 이미지
 fs.writeFileSync(path.join(out, ".nojekyll"), "");
 fs.writeFileSync(path.join(out, "robots.txt"), "User-agent: *\nDisallow: /\n");
 console.log("사이트 생성 완료:", out);
