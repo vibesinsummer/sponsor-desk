@@ -51,11 +51,11 @@ GitHub 사정에 따라 몇 분~30분 정도 늦게 실행될 수 있습니다.
 3. **파일 올리기**: 새 저장소 화면에서 `uploading an existing file` 링크를 누르고, 이 폴더 안의 파일을 **전부** 끌어다 놓은 뒤 `Commit changes`.
    - `.github` 폴더도 꼭 포함해야 합니다. 숨김 폴더라 탐색기에서 안 보이면 `보기 → 숨긴 항목`을 켜세요.
    - `_site` 폴더는 올리지 않아도 됩니다.
-4. **사이트 켜기**: 저장소 `Settings` → 왼쪽 `Pages` → `Source`를 **GitHub Actions** 로 선택.
+4. **Vercel 연결**: https://vercel.com/new → GitHub로 로그인 → 이 저장소 `Import` → Project Name 입력(현재 `combon`) → `Deploy`.
+   - 다른 설정은 건드리지 않습니다. `vercel.json`이 알아서 설정합니다.
 5. **첫 실행**: 저장소 `Actions` 탭 → 왼쪽 `자동 업데이트` → 오른쪽 `Run workflow` → `brief` 선택 → 실행.
-   - 1~2분 뒤 초록색 체크가 뜨면 완료입니다.
-6. **사이트 주소**: `https://<GitHub 아이디>.github.io/<저장소 이름>/`
-   - 예: `https://jtbc-sales.github.io/sponsor-desk/`
+   - 1~2분 뒤 초록색 체크가 뜨면 완료. 수집 결과가 저장되면 Vercel이 자동으로 다시 배포합니다.
+6. **사이트 주소**: `https://<프로젝트 이름>.vercel.app` (현재 https://combon.vercel.app)
    - 이 주소를 팀과 다른 부서에 공유하면 됩니다. 검색엔진에는 노출되지 않도록 설정되어 있습니다.
 
 ---
