@@ -154,21 +154,30 @@ h2 { font-size: 15px; margin: 0; text-wrap: balance; }
 .gm-seal-box .gm-muted { padding: 0; }
 .gm-preview-wrap { min-width: 0; overflow: hidden; background: var(--line); border-radius: 8px; padding: 12px; }
 .gm-scale { transform-origin: top left; }
-.gm-paper { width: 210mm; height: 297mm; box-sizing: border-box; padding: 22mm 20mm 18mm; background: #fff; color: #111; font-family: "IBM Plex Sans KR", "Malgun Gothic", sans-serif; font-size: 11pt; line-height: 1.75; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+.gm-paper { width: 210mm; height: 297mm; box-sizing: border-box; padding: 16mm 18mm 18mm; background: #fff; color: #111; font-family: "IBM Plex Sans KR", "Malgun Gothic", sans-serif; font-size: 10.5pt; line-height: 1.7; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
 .gm-paper.gm-print { box-shadow: none; height: 296mm; overflow: hidden; }
-.gm-org { text-align: center; font-size: 20pt; font-weight: 700; letter-spacing: .08em; padding-bottom: 8mm; border-bottom: 2px solid #111; margin-bottom: 6mm; }
-.gm-head { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
-.gm-head th { width: 18mm; text-align: left; font-weight: 600; vertical-align: top; padding: 1mm 0; }
-.gm-head td { padding: 1mm 0; }
-.gm-body { border-top: 1px solid #111; padding-top: 5mm; }
-.gm-body p { margin: 0 0 3mm; }
-.gm-center { text-align: center; margin: 5mm 0 4mm !important; }
-.gm-item { padding-left: 6mm; }
-.gm-attach { margin-top: 6mm !important; }
-.gm-sign { position: absolute; left: 20mm; right: 20mm; bottom: 52mm; text-align: center; font-size: 17pt; font-weight: 700; letter-spacing: .06em; }
+.gm-paper.gm-empty { display: flex; align-items: center; justify-content: center; color: #888; font-size: 14pt; }
+.gm-top { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
+.gm-top td { vertical-align: middle; padding: 0; }
+.gm-logo { width: 45mm; } .gm-logo img { max-width: 38mm; max-height: 20mm; display: block; }
+.gm-ph { display: inline-block; width: 34mm; height: 16mm; border: 1px dashed #bbb; color: #aaa; font-size: 9pt; text-align: center; line-height: 16mm; }
+.gm-code { text-align: center; } .gm-code .k { font-size: 9pt; color: #555; } .gm-code .v { font-weight: 600; }
+.gm-addr { width: 45mm; font-size: 8.5pt; line-height: 1.45; color: #222; }
+.gm-head { width: 100%; border-collapse: collapse; border-top: 2px solid #111; border-bottom: 1px solid #111; margin-bottom: 6mm; }
+.gm-head th { width: 20mm; text-align: left; font-weight: 600; vertical-align: top; padding: 1.6mm 0; }
+.gm-head td { padding: 1.6mm 0; }
+.gm-head tr + tr th, .gm-head tr + tr td { border-top: 1px solid #ccc; }
+.gm-body p { margin: 0 0 3mm; text-align: justify; }
+.gm-center { text-align: center !important; margin: 5mm 0 4mm !important; }
+.gm-item { margin-bottom: 1.5mm !important; }
+.gm-note2 { margin-top: 4mm !important; }
+.gm-date { position: absolute; left: 18mm; right: 18mm; bottom: 48mm; text-align: center; font-size: 11pt; }
+.gm-sign { position: absolute; left: 18mm; right: 18mm; bottom: 30mm; text-align: center; font-size: 15pt; font-weight: 700; letter-spacing: .04em; }
 .gm-sign span { position: relative; }
-.gm-seal { position: absolute; width: 24mm; height: 24mm; object-fit: contain; margin-left: -8mm; margin-top: -6mm; }
-.gm-foot { position: absolute; left: 20mm; right: 20mm; bottom: 16mm; border-top: 1px solid #111; padding-top: 3mm; font-size: 9pt; line-height: 1.6; color: #333; }
+.gm-seal { position: absolute; right: -16mm; top: 50%; transform: translateY(-50%); width: 22mm; height: 22mm; object-fit: contain; }
+.gm-slot { width: 32px; font-size: 13px; }
+.gm-f small { font-weight: 400; color: var(--accent); margin-left: 4px; }
+.gm-f textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); font: inherit; resize: vertical; }
 @media (max-width: 900px) { .gm-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* 기업 뉴스 */
