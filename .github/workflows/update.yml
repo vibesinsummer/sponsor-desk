@@ -3,7 +3,9 @@
 #   한국 09:00 = UTC 00:00  → 전체 수집 + 브리핑 작성
 #   한국 10:00 = UTC 01:00  → 인사·부고만 수집
 #   한국 16:00 = UTC 07:00  → 인사·부고 포함 전체 수집 (브리핑은 오전 것 유지)
+#   한국 16:45 = UTC 07:45  → 인사·부고만 수집 → 오후 단체 메시지 확정 (17:00~17:30 발송용)
 # GitHub 사정에 따라 실제 실행은 몇 분~30분 정도 늦을 수 있습니다.
+# 인사·부고 단체 메시지: 10시 실행 = 오전 메시지, 16시·16시45분 실행 = 오후 메시지 (주말은 하루 1개)
 
 name: 자동 업데이트
 
@@ -12,6 +14,7 @@ on:
     - cron: "0 0 * * *"
     - cron: "0 1 * * *"
     - cron: "0 7 * * *"
+    - cron: "45 7 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -49,6 +52,7 @@ jobs:
             "schedule:0 0 * * *") MODE=brief ;;
             "schedule:0 1 * * *") MODE=people ;;
             "schedule:0 7 * * *") MODE=full ;;
+            "schedule:45 7 * * *") MODE=people ;;
             workflow_dispatch:*)  MODE="${{ github.event.inputs.mode }}" ;;
             *)                    MODE=none ;;   # 코드만 고친 경우: 수집 없이 사이트 빌드만 점검
           esac
