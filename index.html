@@ -131,6 +131,45 @@ h2 { font-size: 15px; margin: 0; text-wrap: balance; }
 .fold ul a:hover { text-decoration: underline; }
 @media (max-width: 700px) { .theme { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
 
+/* 공문 작성: 왼쪽 입력, 오른쪽 A4 미리보기. 종이는 실제 문서처럼 항상 흰 바탕·검은 글씨 */
+.gm-note { background: var(--pr-soft); color: var(--ink); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
+.gm-grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.gm-form { display: flex; flex-direction: column; }
+.gm-fields { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+.gm-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.gm-f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.gm-f span { font-size: 12px; color: var(--muted); font-weight: 600; }
+.gm-f input, .gm-f select { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); font: inherit; min-width: 0; }
+.gm-han { font-size: 12.5px; color: var(--accent); font-weight: 600; margin-top: -4px; }
+.gm-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 16px 14px; }
+.gm-btn { display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+.gm-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.gm-msg { font-size: 12.5px; color: var(--muted); }
+.gm-set { border-top: 1px solid var(--line); }
+.gm-set > summary { cursor: pointer; padding: 11px 16px; font-weight: 600; }
+.gm-set > summary small { font-weight: 400; color: var(--muted); margin-left: 6px; }
+.gm-seal-box { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px 16px 8px; }
+.gm-seal-box img { width: 56px; height: 56px; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+.gm-muted { color: var(--muted); font-size: 12px; margin: 0; padding: 0 16px 12px; }
+.gm-seal-box .gm-muted { padding: 0; }
+.gm-preview-wrap { min-width: 0; overflow: hidden; background: var(--line); border-radius: 8px; padding: 12px; }
+.gm-scale { transform-origin: top left; }
+.gm-paper { width: 210mm; height: 297mm; box-sizing: border-box; padding: 22mm 20mm 18mm; background: #fff; color: #111; font-family: "IBM Plex Sans KR", "Malgun Gothic", sans-serif; font-size: 11pt; line-height: 1.75; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+.gm-org { text-align: center; font-size: 20pt; font-weight: 700; letter-spacing: .08em; padding-bottom: 8mm; border-bottom: 2px solid #111; margin-bottom: 6mm; }
+.gm-head { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
+.gm-head th { width: 18mm; text-align: left; font-weight: 600; vertical-align: top; padding: 1mm 0; }
+.gm-head td { padding: 1mm 0; }
+.gm-body { border-top: 1px solid #111; padding-top: 5mm; }
+.gm-body p { margin: 0 0 3mm; }
+.gm-center { text-align: center; margin: 5mm 0 4mm !important; }
+.gm-item { padding-left: 6mm; }
+.gm-attach { margin-top: 6mm !important; }
+.gm-sign { position: absolute; left: 20mm; right: 20mm; bottom: 52mm; text-align: center; font-size: 17pt; font-weight: 700; letter-spacing: .06em; }
+.gm-sign span { position: relative; }
+.gm-seal { position: absolute; width: 24mm; height: 24mm; object-fit: contain; margin-left: -8mm; margin-top: -6mm; }
+.gm-foot { position: absolute; left: 20mm; right: 20mm; bottom: 16mm; border-top: 1px solid #111; padding-top: 3mm; font-size: 9pt; line-height: 1.6; color: #333; }
+@media (max-width: 900px) { .gm-grid { grid-template-columns: minmax(0, 1fr); } }
+
 /* 기업 뉴스 */
 .split { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
 .colist { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 112px); max-height: calc(100vh - 140px); overflow: auto; }
@@ -174,10 +213,11 @@ h2 { font-size: 15px; margin: 0; text-wrap: balance; }
 
 <main class="wrap" id="main"><div class="empty">데이터를 불러오는 중입니다.</div></main>
 
+<script src="gongmun.js"></script>
 <script>
 const TABS = [
   ["briefing", "브리핑"], ["signals", "기회 알림"], ["news", "기업 뉴스"],
-  ["people", "인사"], ["obituary", "부고"], ["sponsor", "협찬 동향"],
+  ["people", "인사"], ["obituary", "부고"], ["sponsor", "협찬 동향"], ["gongmun", "공문 작성"],
 ];
 let D = null, view = "briefing", q = "";
 const st = { tag: "전체", grp: "전체", co: null, prOnly: false, myOnly: false, obi: "주요", sp: "전체" };
@@ -334,6 +374,9 @@ const V = {
       ${list(s, (x) => row({ when: ago(x.date), src: x.source, title: x.title, link: x.link,
         pills: pill(x.type, x.type === "PPL" || x.type === "협찬·제작지원" ? "pr" : "") + x.companies.map((c) => pill(c, "co")).join("") + x.media.map((m) => pill(m)).join("") + dup(x.dupes) }))}</section>`;
   },
+  gongmun() {
+    return window.GM ? GM.html(D) : `<div class="empty">공문 작성기를 불러오지 못했습니다. 페이지를 새로고침해 주세요.</div>`;
+  },
 };
 
 function render() {
@@ -341,6 +384,7 @@ function render() {
     const n = { people: prPeople().length, obituary: keyObits().length, signals: cautionNews().length }[k];
     return `<a href="#${k}" ${view === k ? 'aria-current="page"' : ""}>${label}${n ? `<span class="n">${n}</span>` : ""}</a>`;
   }).join("");
+  if (view === "gongmun") { $("#main").innerHTML = V.gongmun(); if (window.GM) GM.mount(); return; }
   $("#main").innerHTML = V[view]() + `<p class="foot">출처: 연합뉴스 인사·부고, 구글 뉴스 검색 결과의 각 언론사 기사. 제목과 링크만 모아 보여주며 기사 전문은 원문 사이트에서 확인하세요. 브리핑은 수집된 기사를 정해진 규칙에 따라 매일 오전 9시에 자동으로 정리한 것입니다.</p>`;
 }
 function route() { const h = location.hash.slice(1); view = TABS.some(([k]) => k === h) ? h : "briefing"; render(); window.scrollTo(0, 0); }
@@ -353,8 +397,9 @@ document.addEventListener("change", (e) => {
   if (e.target.id === "prOnly" || e.target.id === "myOnly") { st[e.target.id] = e.target.checked; render(); }
   if (e.target.id === "cosel") { st.co = e.target.value; render(); }
 });
-$("#q").addEventListener("input", (e) => { q = e.target.value.trim().toLowerCase(); render(); });
+$("#q").addEventListener("input", (e) => { q = e.target.value.trim().toLowerCase(); if (view !== "gongmun") render(); });
 window.addEventListener("hashchange", route);
+window.addEventListener("gm-rerender", () => { if (view === "gongmun") render(); });
 
 fetch("data.json").then((r) => r.json()).then((d) => {
   D = d;

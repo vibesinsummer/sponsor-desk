@@ -26,6 +26,7 @@ const out = path.join(__dirname, "_site");
 fs.mkdirSync(out, { recursive: true });
 fs.writeFileSync(path.join(out, "index.html"), html);
 fs.copyFileSync(path.join(__dirname, "data.json"), path.join(out, "data.json"));
+fs.copyFileSync(path.join(__dirname, "gongmun.js"), path.join(out, "gongmun.js")); // 공문 작성 탭
 fs.writeFileSync(path.join(out, ".nojekyll"), "");
 fs.writeFileSync(path.join(out, "robots.txt"), "User-agent: *\nDisallow: /\n");
 console.log("사이트 생성 완료:", out);

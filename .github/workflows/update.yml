@@ -22,7 +22,7 @@ on:
         options: [brief, full, people]
   push:
     branches: [main]
-    paths: ["index.html", "config.js", "collect.js", "briefing.js", "build.js"]
+    paths: ["index.html", "gongmun.js", "config.js", "collect.js", "briefing.js", "build.js"]
 
 # 사이트 게시는 Vercel(combon.vercel.app)이 이 저장소의 새 저장을 감지해 자동으로 합니다.
 permissions:
