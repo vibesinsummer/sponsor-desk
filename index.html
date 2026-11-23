@@ -75,24 +75,61 @@ h2 { font-size: 15px; margin: 0; text-wrap: balance; }
 .prlines { margin: 2px 0 0; padding: 6px 10px; background: var(--pr-soft); border-radius: 6px; color: var(--ink); font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
 .empty { padding: 28px 16px; color: var(--muted); text-align: center; }
 
-/* 브리핑 */
-.brief-head { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
-.brief-head .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--accent); }
-.brief-head p { margin: 0; font-size: 16px; font-weight: 600; max-width: 70ch; text-wrap: pretty; }
-.brief-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
-.brief-grid .panel.wide { grid-column: 1 / -1; }
-.k-watch .items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.k-watch .bitem { border-right: 1px solid var(--line); }
-.k-watch .bitem:nth-child(2n) { border-right: 0; }
-.k-watch .bitem:last-child { border-bottom: 1px solid var(--line); }
-.bitem.neg { box-shadow: inset 3px 0 0 var(--warn); }
-.k-watch .hd h2 { color: var(--accent); }
-@media (max-width: 860px) { .k-watch .items { grid-template-columns: minmax(0, 1fr); } .k-watch .bitem { border-right: 0; } }
-.bitem { padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; }
-.bitem:last-child { border-bottom: 0; }
-.bitem .act { font-size: 12.5px; color: var(--muted); display: flex; gap: 6px; }
-.bitem .act::before { content: "→"; color: var(--accent); font-weight: 700; }
-.k-caution .hd h2 { color: var(--warn); } .k-people .hd h2 { color: var(--pr); } .k-opportunity .hd h2 { color: var(--good); }
+/* 브리핑: ① 꼭 볼 것 카드 → ② 주제 묶음 → ③ 현황판 타일 → ④ 접힌 목록 */
+.bhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 18px; }
+.bhead .eyebrow { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.kpi { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.kpi b { font-size: 17px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.kpi.warn b { color: var(--warn); } .kpi.accent b { color: var(--accent); }
+.bsec { margin-bottom: 26px; }
+.bsec > .st { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; }
+.bsec > .st h2 { font-size: 16px; }
+.bsec > .st span { color: var(--muted); font-size: 12px; }
+.must { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 10px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--faint); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.card:hover { border-color: var(--accent); }
+.card.people { border-top-color: var(--pr); } .card.neg { border-top-color: var(--warn); } .card.obit { border-top-color: var(--ink); }
+.card .lb { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; font-weight: 600; }
+.card.people .lb { color: var(--pr); } .card.neg .lb { color: var(--warn); } .card.obit .lb { color: var(--ink); }
+.card .lb span { font-family: var(--mono); font-weight: 500; color: var(--faint); }
+.card .co { font-weight: 700; font-size: 15px; }
+.card .tt { font-size: 13px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.card .do { margin-top: auto; align-self: flex-start; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.card.neg .do { background: var(--warn-soft); color: var(--warn); }
+.themes { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.theme { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.theme:last-child { border-bottom: 0; }
+.theme .nm { font-weight: 700; display: flex; flex-direction: column; }
+.theme .nm small { font-weight: 500; color: var(--muted); font-size: 12px; }
+.theme.neg .nm { color: var(--warn); }
+.theme .mid { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.theme .top { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.theme .top:hover { text-decoration: underline; }
+.theme .do { font-size: 12px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.theme.neg .do { color: var(--warn); }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.bgroup { margin-bottom: 12px; }
+.bgroup h3 { margin: 0 0 6px; font-size: 12px; color: var(--faint); font-weight: 600; letter-spacing: .03em; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 132px), 1fr)); gap: 6px; }
+.tile { border-radius: 6px; border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.tile summary { list-style: none; cursor: pointer; padding: 7px 10px; display: flex; justify-content: space-between; gap: 6px; font-size: 13px; font-weight: 600; }
+.tile summary::-webkit-details-marker { display: none; }
+.tile summary .c { font-family: var(--mono); font-weight: 500; font-size: 11px; color: var(--faint); }
+.tile.neg { background: var(--warn-soft); border-color: transparent; } .tile.neg summary { color: var(--warn); }
+.tile.people { background: var(--pr-soft); border-color: transparent; } .tile.people summary { color: var(--pr); }
+.tile.opp { background: var(--good-soft); border-color: transparent; } .tile.opp summary { color: var(--good); }
+.tile.none { border-style: dashed; } .tile.none summary { color: var(--faint); font-weight: 500; cursor: default; }
+.tile[open] { grid-column: 1 / -1; }
+.tile ul { margin: 0; padding: 0 10px 8px; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.tile ul a { color: var(--ink); } .tile ul a:hover { text-decoration: underline; }
+.tile ul .s { color: var(--faint); font-size: 11.5px; margin-left: 6px; }
+.fold { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; }
+.fold > summary { cursor: pointer; padding: 11px 16px; font-weight: 600; }
+.fold > summary span { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
+.fold ul { margin: 0; padding: 0 16px 12px; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.fold ul a:hover { text-decoration: underline; }
+@media (max-width: 700px) { .theme { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
 
 /* 기업 뉴스 */
 .split { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -185,13 +222,56 @@ function stats() {
 const V = {
   briefing() {
     const b = D.briefing;
-    if (!b) return `<div class="empty">오늘 브리핑이 아직 작성되지 않았습니다.</div>`;
-    const sec = b.sections.filter((s) => s.items.some((i) => hit(i.text, i.action)));
-    return stats() + `<div class="brief-head"><span class="eyebrow">${esc(b.date)} 브리핑</span><p>${esc(b.headline)}</p></div>
-    <div class="brief-grid">${sec.map((s) => `<section class="panel k-${s.kind} ${s.kind === "watch" ? "wide" : ""}">
-      <div class="hd"><h2>${esc(s.title)}</h2><span class="sub">${s.kind === "watch" ? "소식이 있는 주요영업처는 모두 표시 · 부정이슈 먼저" : s.items.length + "건"}</span></div>
-      <div class="items">${s.items.filter((it) => hit(it.text, it.action)).map((it) => `<div class="bitem ${/^부정이슈/.test(it.action) ? "neg" : ""}"><div>${esc(it.text)}</div><div class="act">${esc(it.action)}</div></div>`).join("")}</div>
-    </section>`).join("")}</div>`;
+    if (!b || !b.must) return `<div class="empty">오늘 브리핑이 아직 작성되지 않았습니다. 다음 오전 9시 업데이트 때 만들어집니다.</div>`;
+    const all = b.board.flatMap((g) => g.items);
+    const negN = all.filter((i) => i.status === "neg").length;
+    const live = all.filter((i) => i.status !== "none").length;
+    const LBL = { people: "인사", neg: "부정이슈", obit: "부고" };
+    const must = b.must.filter((m) => hit(m.company, m.title, m.label));
+    const themes = b.themes.filter((t) => hit(t.title, t.companies.map((c) => c.name).join(" ")));
+    const board = b.board
+      .map((g) => ({ ...g, items: g.items.filter((i) => hit(i.name, i.news.map((n) => n.title).join(" "))) }))
+      .filter((g) => g.items.length);
+    const link = (href, inner, cls = "") => `<a class="${cls}" href="${esc(href)}" target="_blank" rel="noopener">${inner}</a>`;
+    const chipsOf = (t) => {
+      const max = 8, cs = t.companies;
+      return cs.slice(0, max).map((c) => link(c.link, esc(c.name) + (c.note ? " · " + esc(c.note) : ""), "pill " + (t.key === "neg" ? "warn" : "co"))).join("")
+        + (cs.length > max ? pill(`외 ${cs.length - max}곳`) : "");
+    };
+    const tile = (i) => i.status === "none"
+      ? `<div class="tile none"><summary>${esc(i.name)}<span class="c">–</span></summary></div>`
+      : `<details class="tile ${i.status}"><summary>${esc(i.name)}<span class="c">${i.count}</span></summary><ul>${
+          i.news.map((n) => `<li>${link(n.link, (n.neg ? "⚠ " : "") + esc(n.title))}<span class="s">${esc(n.source)} · ${ago(n.date)}</span></li>`).join("")
+        }</ul></details>`;
+
+    return `
+    <div class="bhead"><span class="eyebrow">${esc(b.date)} 브리핑 · 최근 ${b.winH}시간</span>
+      <span class="kpi accent"><b>${b.must.length}</b>꼭 볼 것</span>
+      <span class="kpi warn"><b>${negN}</b>부정이슈</span>
+      <span class="kpi"><b>${live}/${all.length}</b>소식 있는 주요영업처</span></div>
+
+    <section class="bsec"><div class="st"><h2>① 오늘 꼭 볼 것</h2><span>연락·조문·제안 보류처럼 오늘 움직여야 하는 것</span></div>
+      ${must.length ? `<div class="must">${must.map((m) => link(m.link, `
+        <div class="lb">${esc(m.label || LBL[m.type])}<span>${esc(m.when)}</span></div>
+        <div class="co">${esc(m.company)}</div><div class="tt">${esc(m.title)}</div><span class="do">${esc(m.action)}</span>`, "card " + m.type)).join("")}</div>`
+        : `<div class="empty">오늘은 바로 움직여야 할 일이 없습니다.</div>`}</section>
+
+    <section class="bsec"><div class="st"><h2>② 주요 이슈</h2><span>주요영업처 소식을 주제별로 묶음 · 기업 이름을 누르면 기사</span></div>
+      <div class="themes">${themes.map((t) => `<div class="theme ${t.key}">
+        <div class="nm">${esc(t.title)}<small>${t.count}곳</small></div>
+        <div class="mid"><div class="meta">${chipsOf(t)}</div>${t.top ? link(t.top.link, "대표 기사: " + esc(t.top.title), "top") : ""}</div>
+        <div class="do">→ ${esc(t.action)}</div></div>`).join("") || `<div class="empty">묶을 만한 이슈가 없습니다.</div>`}</div></section>
+
+    <section class="bsec"><div class="st"><h2>③ 주요영업처 현황판</h2><span>이름을 누르면 기사가 펼쳐집니다</span></div>
+      <div class="legend"><span><i style="background:var(--warn)"></i>부정이슈</span><span><i style="background:var(--pr)"></i>인사</span><span><i style="background:var(--good)"></i>영업 기회</span><span><i style="background:var(--line)"></i>일반 소식</span><span>– 새 소식 없음</span></div>
+      ${board.map((g) => `<div class="bgroup"><h3>${esc(g.group)}</h3><div class="tiles">${g.items.map(tile).join("")}</div></div>`).join("")}</section>
+
+    <section class="bsec">
+      <details class="fold"><summary>경조사<span>${b.obituary.length}건 · ★ 주요영업처</span></summary><ul>${
+        b.obituary.map((o) => `<li>${link(o.link, (o.watch ? "★ " : "") + esc(o.title))} ${pill(o.when)}</li>`).join("")}</ul></details>
+      <details class="fold"><summary>광고·협찬 동향<span>${b.sponsor.length}건</span></summary><ul>${
+        b.sponsor.map((x) => `<li>${pill(x.type, "pr")} ${link(x.link, esc(x.title))}</li>`).join("")}</ul></details>
+    </section>`;
   },
   signals() {
     const tags = ["전체", ...OPP];

@@ -56,80 +56,97 @@ module.exports = function makeBriefing(D) {
   const kstDay = kstNow().getUTCDay(); // 0=일 1=월
   const winH = kstDay === 1 ? 72 : 26; // 월요일엔 주말 포함
   const fresh = (iso) => Date.now() - new Date(iso).getTime() < winH * 3600000;
+  const freshY = (t) => Date.now() - ynaDate(t).getTime() < winH * 3600000;
+  const short = (t, n = 70) => (t.length > n ? t.slice(0, n - 1) + "…" : t);
+  const strip = (t) => t.replace(/^\[(인사|부고)\]\s*/, "");
+  const wNews0 = D.news.filter((n) => n.watch && fresh(n.date));
+  // 부정 키워드가 기사 1건에만 스친 경우는 잡음 → 보도 합계 2건 이상인 기업만 부정이슈로 인정
+  const negScore = {};
+  // 심각한 단어(유출·횡령·사망 등)는 1건이라도 인정, 약한 단어(논란·소송·적자 등)는 보도 2건 이상일 때만
+  const SEVERE = ["유출", "횡령", "배임", "압수수색", "구속", "기소", "사망", "숨져", "리콜", "해킹", "파업", "불매", "갑질"];
+  for (const n of wNews0) if (n.caution.length) negScore[n.company] = (negScore[n.company] || 0) + (n.dupes || 1) + (n.caution.some((w) => SEVERE.includes(w)) ? 1 : 0);
+  const wNews = wNews0.map((n) => (n.caution.length && negScore[n.company] < 2 ? { ...n, caution: [] } : n));
 
-  // 0) 주요영업처 소식: 소식이 있는 주요영업처는 빠짐없이 모두 (기업당 대표 기사 1건 + 나머지 건수)
-  const watch = [];
-  for (const c of D.companies.filter((c) => c.watch)) {
-    const arr = D.news.filter((n) => n.company === c.name && fresh(n.date)).sort(byDupes);
-    if (!arr.length) continue;
-    const lead = arr.find((n) => n.caution.length) || arr.find((n) => n.tags.some((t) => OPP.includes(t) || t === "인사·조직")) || arr[0];
-    const total = arr.reduce((s, n) => s + (n.dupes || 1), 0);
-    const tag = lead.tags.find((t) => OPP.includes(t));
-    watch.push({
-      company: c.name,
-      text: `${c.name}: ${lead.title}${arr.length > 1 ? ` 외 ${arr.length - 1}건` : ""} (관련 보도 ${total}건)`,
-      action: lead.caution.length ? `부정이슈('${lead.caution.join("·")}'). 신규 제안 전 추이 확인`
-        : lead.tags.includes("인사·조직") ? "인사 소식. 홍보 라인 변동 여부 확인"
-        : tag ? OPP_ACTION[tag] : "동향 파악, 담당자 안부 연락 소재로 활용",
-      rank: lead.caution.length ? 0 : lead.tags.includes("인사·조직") ? 1 : tag ? 2 : 3,
-      total,
-    });
+  // ───────── ① 오늘 꼭 볼 것 (최대 5건): 실제로 움직여야 하는 것만 ─────────
+  const cand = [];
+  for (const p of D.personnel.filter((p) => p.pr.length && freshY(p.time))) {
+    cand.push({ type: "people", label: "홍보 라인 교체", prio: isWatch(p.companies) ? 1 : 3,
+      company: p.companies[0] || strip(p.title), title: p.pr.slice(0, 2).join(" · ").replace(/▲\s*/g, ""),
+      link: p.link, when: md(ynaDate(p.time)), action: "신임 담당자 축하 연락" });
   }
-  watch.sort((a, b) => a.rank - b.rank || b.total - a.total);
-  const watchItems = watch.map(({ text, action }) => ({ text, action }));
+  for (const o of D.obituary.filter((o) => freshY(o.time) && (isWatch(o.companies) || o.pr))) {
+    cand.push({ type: "obit", label: "부고", prio: isWatch(o.companies) ? 1 : 4,
+      company: o.companies[0] || "홍보·언론", title: strip(o.title), link: o.link, when: md(ynaDate(o.time)), action: "조문·조화 여부 결정" });
+  }
+  for (const n of onePerCompany(wNews.filter((n) => n.caution.length).sort(byDupes), (n) => n.company, 99)) {
+    cand.push({ type: "neg", label: "부정이슈", prio: (n.dupes || 1) >= 3 ? 2 : 5, dupes: n.dupes || 1,
+      company: n.company, title: n.title, link: n.link, when: md(new Date(n.date)), action: "신규 제안 보류, 추이 확인" });
+  }
+  for (const n of onePerCompany(wNews.filter((n) => n.tags.includes("인사·조직") && /대표|사장|회장|선임|내정|취임/.test(n.title)).sort(byDupes), (n) => n.company, 99)) {
+    cand.push({ type: "people", label: "경영진 인사", prio: 3, dupes: n.dupes || 1,
+      company: n.company, title: n.title, link: n.link, when: md(new Date(n.date)), action: "홍보 라인 변동 확인" });
+  }
+  cand.sort((a, b) => a.prio - b.prio || (b.dupes || 1) - (a.dupes || 1));
+  const must = [], perType = {}, seenCo = new Set();
+  for (const c of cand) {
+    if (must.length >= 5) break;
+    if ((perType[c.type] || 0) >= 2 || seenCo.has(c.type + c.company)) continue;
+    perType[c.type] = (perType[c.type] || 0) + 1; seenCo.add(c.type + c.company);
+    must.push({ ...c, title: short(c.title, 80) });
+  }
+  // 부족하면 유형 제한 없이 채움
+  for (const c of cand) { if (must.length >= 5) break; if (!must.some((m) => m.link === c.link)) must.push({ ...c, title: short(c.title, 80) }); }
+  must.forEach((m) => { delete m.prio; delete m.dupes; });
 
-  // 1) 인사: 홍보 라인 변동 + 주요영업처 인사는 전부, 그 외 관심 기업은 일부
-  const recentP = D.personnel.filter((p) => within(ynaDate(p.time), 3));
-  const prP = D.personnel.filter((p) => p.pr.length && within(ynaDate(p.time), 7));
-  const people = prP.map((p) => ({
-    text: `${p.title.replace(/^\[인사\]\s*/, "")}: ${p.pr.join(", ").replace(/▲\s*/g, "")}`.slice(0, 160),
-    action: "신임 홍보 담당자 축하 인사, 미팅 요청",
+  // ───────── ② 주요 이슈: 주요영업처 기사를 주제별로 묶기 ─────────
+  const THEMES = [
+    { key: "neg", name: "부정이슈", test: (n) => n.caution.length, action: "해당사 신규 제안 보류, 추이 확인" },
+    { key: "people", name: "인사·조직 변화", test: (n) => n.tags.includes("인사·조직"), action: "홍보 라인 변동 확인, 축하 연락" },
+    { key: "esg", name: "사회공헌·나눔", test: (n) => n.tags.includes("사회공헌·ESG"), action: "연말 나눔·공익 캠페인 제안 적기" },
+    { key: "launch", name: "신제품·서비스 출시", test: (n) => n.tags.includes("신제품·론칭"), action: "런칭 광고·PPL 제안" },
+    { key: "mkt", name: "마케팅·캠페인", test: (n) => n.tags.includes("마케팅·캠페인"), action: "캠페인 매체 확장 제안" },
+    { key: "invest", name: "투자·수주·신사업", test: (n) => n.tags.includes("투자·신사업"), action: "기업 이미지 광고·다큐 패키지 제안" },
+    { key: "event", name: "행사·기념일", test: (n) => n.tags.includes("행사·기념일"), action: "행사 연계 협찬 제안" },
+  ];
+  const bucket = Object.fromEntries(THEMES.map((t) => [t.key, []]));
+  for (const n of wNews) { const t = THEMES.find((t) => t.test(n)); if (t) bucket[t.key].push(n); }
+  const themes = THEMES.map((t) => {
+    const arr = bucket[t.key].sort(byDupes);
+    const cos = onePerCompany(arr, (n) => n.company, 99).map((n) => ({ name: n.company, note: t.key === "neg" ? n.caution.join("·") : "", link: n.link, title: n.title }));
+    return { key: t.key, title: t.name, action: t.action, count: cos.length, companies: cos,
+      top: arr[0] ? { title: short(arr[0].title, 90), link: arr[0].link, source: arr[0].source, company: arr[0].company } : null };
+  }).filter((t) => t.count >= (t.key === "neg" ? 1 : 2))
+    .sort((a, b) => (a.key === "neg" ? -1 : b.key === "neg" ? 1 : b.count - a.count))
+    .slice(0, 5);
+
+  // ───────── ③ 주요영업처 현황판: 전 기업 상태 타일 ─────────
+  const groups = [...new Set(D.companies.filter((c) => c.watch).map((c) => c.group))];
+  const board = groups.map((g) => ({
+    group: g,
+    items: D.companies.filter((c) => c.watch && c.group === g).map((c) => {
+      const arr = wNews.filter((n) => n.company === c.name).sort(byDupes);
+      const status = !arr.length ? "none" : arr.some((n) => n.caution.length) ? "neg" : arr.some((n) => n.tags.includes("인사·조직")) ? "people" : arr.some((n) => n.tags.some((t) => OPP.includes(t))) ? "opp" : "normal";
+      return { name: c.name, status, count: arr.length,
+        news: arr.slice(0, 4).map((n) => ({ title: n.title, link: n.link, source: n.source, date: n.date, neg: n.caution.length > 0 })) };
+    }),
   }));
-  for (const p of recentP.filter((p) => !p.pr.length && isWatch(p.companies))) {
-    people.push({ text: `${p.title} (${md(ynaDate(p.time))})`, action: "주요영업처 인사. 홍보 라인 변동 여부 확인" });
-  }
-  for (const n of onePerCompany(D.execNews.filter((n) => n.companies.length).sort(byDupes), (n) => n.companies[0], 20)) {
-    if (!isWatch(n.companies) && people.length >= 8) continue;
-    if (people.some((x) => x.text.includes(n.companies[0]))) continue;
-    people.push({ text: n.title + cnt(n), action: "그룹 정기인사. 홍보 라인 변동 여부 확인" });
-  }
 
-  // 2) 제안 포인트: 주요영업처 우선, 많이 보도된 순, 기업당 1건
-  const oppAll = D.news.filter((n) => fresh(n.date) && !n.caution.length && n.tags.some((t) => OPP.includes(t)))
-    .sort((a, b) => (b.watch ? 1 : 0) - (a.watch ? 1 : 0) || byDupes(a, b));
-  const opp = onePerCompany(oppAll, (n) => n.company, 8)
-    .map((n) => ({ text: `${n.company}: ${n.title}${cnt(n)}`, action: OPP_ACTION[n.tags.find((t) => OPP.includes(t))] }));
-
-  // 3) 부정이슈: 주요영업처는 전부, 그 외는 상위 몇 건
-  const cauAll = onePerCompany(D.news.filter((n) => n.caution.length && fresh(n.date)).sort((a, b) => (b.watch ? 1 : 0) - (a.watch ? 1 : 0) || byDupes(a, b)), (n) => n.company, 99);
-  const caution = cauAll.filter((n, i) => n.watch || i < 5)
-    .map((n) => ({ text: `${n.company}: ${n.title}${cnt(n)}`, action: `'${n.caution.join("·")}' 관련. 신규 제안 전 이슈 추이 확인` }));
-
-  // 4) 경조사: 주요영업처·홍보 라인은 전부, 그 외 임원은 일부 (최근 3일)
+  // ───────── ④ 접어 두는 목록: 경조사·협찬 동향 ─────────
   const obAll = D.obituary.filter((o) => within(ynaDate(o.time), 3) && (o.pr || o.companies.length || o.exec));
-  const obit = [...obAll.filter((o) => isWatch(o.companies) || o.pr), ...obAll.filter((o) => !(isWatch(o.companies) || o.pr)).slice(0, 3)]
-    .map((o) => ({ text: `${o.title.replace(/^\[부고\]\s*/, "")} (${md(ynaDate(o.time))})`,
-      action: isWatch(o.companies) ? "주요영업처 경조사. 조문·조화 여부 결정" : o.pr ? "홍보 담당자 경조사. 조문·조화 여부 결정" : "관계 확인 후 조문 여부 결정" }));
-
-  // 5) 광고·협찬 동향: 주요영업처 언급 우선
+  const obituary = [...obAll.filter((o) => isWatch(o.companies) || o.pr), ...obAll.filter((o) => !(isWatch(o.companies) || o.pr)).slice(0, 3)]
+    .map((o) => ({ title: strip(o.title), link: o.link, when: md(ynaDate(o.time)), watch: isWatch(o.companies) }));
   const sponsor = distinct(D.sponsor.filter((s) => SPONSOR_ACTION[s.type] || isWatch(s.companies))
     .sort((a, b) => (isWatch(b.companies) ? 1 : 0) - (isWatch(a.companies) ? 1 : 0) || byDupes(a, b)), 6)
-    .map((s) => ({ text: s.title + cnt(s), action: SPONSOR_ACTION[s.type] || "주요영업처 광고·협찬 소식. 내용 확인" }));
+    .map((s) => ({ title: s.title, link: s.link, type: s.type, source: s.source }));
 
-  const cauW = cauAll.filter((n) => n.watch).length;
-  const headline = `주요영업처 ${watchSet.size}곳 중 ${watch.length}곳에 새 소식이 있습니다(최근 ${winH}시간). 부정이슈 ${cauW}곳, 홍보 라인 인사 ${prP.length}건, 주요 부고 ${obit.length}건.`;
-
+  const negN = board.flatMap((g) => g.items).filter((i) => i.status === "neg").length;
+  const liveN = board.flatMap((g) => g.items).filter((i) => i.status !== "none").length;
   return {
     date: kstNow().toISOString().slice(0, 10),
     auto: true,
-    headline,
-    sections: [
-      { title: `주요영업처 소식 (${watch.length}곳)`, kind: "watch", items: watchItems },
-      { title: "인사 체크: 홍보 라인 교체", kind: "people", items: people },
-      { title: "부정이슈", kind: "caution", items: caution },
-      { title: "오늘의 제안 포인트", kind: "opportunity", items: opp },
-      { title: "경조사 체크", kind: "obituary", items: obit },
-      { title: "광고·협찬 동향", kind: "sponsor", items: sponsor },
-    ].filter((s) => s.items.length),
+    v: 2,
+    winH,
+    headline: `꼭 볼 것 ${must.length}건 · 부정이슈 ${negN}곳 · 소식 있는 주요영업처 ${liveN}/${watchSet.size}곳`,
+    must, themes, board, obituary, sponsor,
   };
 };
