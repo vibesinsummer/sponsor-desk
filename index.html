@@ -187,6 +187,40 @@ h2 { font-size: 15px; margin: 0; text-wrap: balance; }
 .msg-card.latest { border-color: var(--accent); }
 .msg-text { display: block; width: 100%; box-sizing: border-box; border: 0; border-top: 1px solid var(--line); padding: 12px 16px; font: 13px/1.6 var(--sans); color: var(--ink); background: var(--surface); resize: vertical; border-radius: 0 0 8px 8px; }
 
+/* 기업 요약 · 캘린더 */
+.sum-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.cosel2 { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; font-weight: 600; min-width: 220px; }
+.sum-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 16px; margin-bottom: 14px; }
+.sum-head h2 { font-size: 20px; }
+.sum-kpi { display: flex; gap: 8px; flex-wrap: wrap; }
+.sum-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.sum-grid .wide2 { grid-column: 1 / -1; }
+.sum-list { list-style: none; margin: 0; padding: 6px 16px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.sum-list li { min-width: 0; overflow-wrap: anywhere; }
+.sum-list a:hover { text-decoration: underline; }
+.sum-list .d { font-family: var(--mono); font-size: 11.5px; color: var(--faint); margin-right: 8px; }
+.sum-empty { color: var(--muted); font-size: 12.5px; margin: 0; padding: 10px 16px 14px; }
+.sum-go { color: var(--accent) !important; font-weight: 600; }
+.cal-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+.cal-main .hd h2 { min-width: 120px; text-align: center; }
+.cal-main .hd .legend { margin-left: auto; margin-bottom: 0; }
+.cal-seasons { display: flex; flex-direction: column; gap: 4px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.cal-season { font-size: 12.5px; color: var(--muted); } .cal-season b { color: var(--accent); font-weight: 600; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal-h { padding: 6px; font-size: 12px; color: var(--muted); text-align: center; border-bottom: 1px solid var(--line); }
+.cal-cell { min-height: 86px; padding: 4px 5px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cal-cell:nth-child(7n) { border-right: 0; }
+.cal-cell.off { background: var(--bg); }
+.cal-cell.today { background: var(--accent-soft); }
+.cal-d { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.cal-cell.sun .cal-d { color: var(--warn); } .cal-cell.sat .cal-d { color: var(--accent); }
+.cal-ev { display: block; font-size: 11px; line-height: 1.35; padding: 2px 5px; border-radius: 4px; background: var(--bg); color: var(--ink); overflow-wrap: anywhere; }
+.cal-ev.an { background: var(--good-soft); color: var(--good); font-weight: 600; }
+.cal-ev.hol { background: var(--warn-soft); color: var(--warn); }
+.cal-ev.season { background: var(--accent-soft); color: var(--accent); }
+.cal-side .cal-ev { display: inline; }
+@media (max-width: 900px) { .sum-grid, .cal-wrap { grid-template-columns: minmax(0, 1fr); } .cal-cell { min-height: 64px; } }
+
 /* 기업 뉴스 */
 .split { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
 .colist { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 112px); max-height: calc(100vh - 140px); overflow: auto; }
@@ -233,8 +267,9 @@ h2 { font-size: 15px; margin: 0; text-wrap: balance; }
 <script src="gongmun.js"></script>
 <script>
 const TABS = [
-  ["briefing", "브리핑"], ["signals", "기회 알림"], ["news", "기업 뉴스"],
-  ["people", "인사"], ["obituary", "부고"], ["sponsor", "협찬 동향"], ["msg", "인사·부고 메시지"], ["gongmun", "공문 작성"],
+  ["briefing", "브리핑"], ["signals", "기회 알림"], ["news", "기업 뉴스"], ["company", "기업 요약"],
+  ["people", "인사"], ["prlog", "홍보 라인"], ["obituary", "부고"], ["sponsor", "협찬 동향"],
+  ["calendar", "캘린더"], ["msg", "인사·부고 메시지"], ["gongmun", "공문 작성"],
 ];
 let D = null, view = "briefing", q = "";
 const st = { tag: "전체", grp: "전체", co: null, prOnly: false, myOnly: false, obi: "주요", sp: "전체" };
@@ -299,7 +334,7 @@ const V = {
       ? `<div class="tile none"><summary>${esc(i.name)}<span class="c">–</span></summary></div>`
       : `<details class="tile ${i.status}"><summary>${esc(i.name)}<span class="c">${i.count}</span></summary><ul>${
           i.news.map((n) => `<li>${link(n.link, (n.neg ? "⚠ " : "") + esc(n.title))}<span class="s">${esc(n.source)} · ${ago(n.date)}</span></li>`).join("")
-        }</ul></details>`;
+        }<li><a href="#company" data-sum="${esc(i.name)}" class="sum-go">기업 요약 보기 →</a></li></ul></details>`;
 
     return `
     <div class="bhead"><span class="eyebrow">${esc(b.date)} 브리핑 · 최근 ${b.winH}시간</span>
@@ -391,6 +426,82 @@ const V = {
       ${list(s, (x) => row({ when: ago(x.date), src: x.source, title: x.title, link: x.link,
         pills: pill(x.type, x.type === "PPL" || x.type === "협찬·제작지원" ? "pr" : "") + x.companies.map((c) => pill(c, "co")).join("") + x.media.map((m) => pill(m)).join("") + dup(x.dupes) }))}</section>`;
   },
+  prlog() {
+    const L = (D.prlog || []).filter((x) => (!st.prWatch || x.companies.some((c) => WATCH.has(c))) && hit(x.org, x.lines.join(" "), x.companies.join(" ")));
+    const md = (iso) => { const d = new Date(iso); return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`; };
+    return `<section class="panel"><div class="hd"><h2>홍보·커뮤니케이션·마케팅 라인 인사 기록</h2><span class="sub">연합뉴스 인사 기사에서 자동 누적 · ${L.length}건${(D.prlog || []).length ? ` · ${md(D.prlog[D.prlog.length - 1].date)}부터` : ""}</span></div>
+      <div class="toolbar"><label class="toggle"><input type="checkbox" id="prWatch" ${st.prWatch ? "checked" : ""}> 주요영업처만</label><span class="sub">검색창에 기업명이나 이름을 넣으면 걸러집니다</span></div>
+      ${list(L, (x) => row({ when: md(x.date), src: "연합뉴스", title: x.org, link: x.link, sig: "s-pr",
+        pills: x.companies.map((c) => pill(c, WATCH.has(c) ? "co" : "")).join(""),
+        extra: `<div class="prlines">${x.lines.map((l) => `<span>▲ ${esc(l)}</span>`).join("")}</div>` }), "기록된 홍보 라인 인사가 없습니다.")}</section>`;
+  },
+  company() {
+    const watch = D.companies.filter((c) => c.watch && !/전체/.test(c.name));
+    if (!st.sumCo) st.sumCo = watch[0].name;
+    const sel = `<select class="cosel2" id="sumSel" aria-label="기업 선택">${[...new Set(watch.map((c) => c.group))].map((g) => `<optgroup label="${esc(g)}">${watch.filter((c) => c.group === g).map((c) => `<option ${c.name === st.sumCo ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</optgroup>`).join("")}</select>`;
+    if (!HIST) { loadHist(); return `<div class="sum-top">${sel}</div><div class="empty">한 달치 기록을 불러오는 중입니다…</div>`; }
+    const co = st.sumCo, H = HIST[co] || [];
+    const news = H.filter((x) => x.kind === "news"), neg = news.filter((x) => x.caution && x.caution.length);
+    const opp = news.filter((x) => !(x.caution || []).length && (x.tags || []).some((t) => OPP.includes(t)));
+    const ppl = H.filter((x) => x.kind !== "news" || (x.tags || []).includes("인사·조직"));
+    const prs = (D.prlog || []).filter((x) => x.companies.includes(co));
+    const an = (D.anniv || {})[co];
+    let docs = []; try { docs = JSON.parse(localStorage.getItem("gm.log") || "[]").filter((d) => d.co && (d.co.includes(co) || co.includes(d.co))); } catch {}
+    const d10 = (iso) => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()}`; };
+    const mini = (arr, f, empty) => arr.length ? `<ul class="sum-list">${arr.map(f).join("")}</ul>` : `<p class="sum-empty">${empty}</p>`;
+    const ln = (x) => `<li><span class="d">${d10(x.date)}</span><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.title)}</a>${x.dupes > 1 ? ` <span class="pill dup">보도 ${x.dupes}건</span>` : ""}</li>`;
+    return `<div class="sum-top">${sel}<span class="sub">최근 ${news.length ? Math.max(1, Math.round((Date.now() - new Date(news[news.length - 1].date)) / 86400000)) : 0}일 기록 · 기록은 매일 쌓여 최대 35일까지 보관</span></div>
+      <div class="sum-head panel"><div><h2>${esc(co)}</h2><span class="sub">${esc((watch.find((c) => c.name === co) || {}).group || "")}${an ? ` · ${an.what}기념일 ${+an.md.slice(0, 2)}월 ${+an.md.slice(3)}일 (${an.year}년 ${an.years}주년 기사 기준)` : ""}</span></div>
+        <div class="sum-kpi"><span class="kpi"><b>${news.length}</b>기사</span><span class="kpi warn"><b>${neg.length}</b>부정이슈</span><span class="kpi accent"><b>${opp.length}</b>영업 기회</span><span class="kpi"><b>${ppl.length + prs.length}</b>인사·부고</span></div></div>
+      <div class="sum-grid">
+        <section class="panel"><div class="hd"><h2 style="color:var(--pr)">홍보 라인 변동</h2></div>${mini(prs.slice(0, 6), (x) => `<li><span class="d">${d10(x.date)}</span><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.org)}</a><div class="prlines">${x.lines.map((l) => `<span>▲ ${esc(l)}</span>`).join("")}</div></li>`, "기록된 홍보 라인 변동이 없습니다.")}</section>
+        <section class="panel"><div class="hd"><h2 style="color:var(--warn)">부정이슈</h2></div>${mini(neg.slice(0, 6), ln, "부정이슈 기사가 없습니다.")}</section>
+        <section class="panel"><div class="hd"><h2 style="color:var(--good)">영업 기회</h2></div>${mini(opp.slice(0, 8), ln, "영업 기회 기사가 없습니다.")}</section>
+        <section class="panel"><div class="hd"><h2>인사·부고</h2></div>${mini(ppl.slice(0, 8), ln, "인사·부고 기사가 없습니다.")}</section>
+        <section class="panel"><div class="hd"><h2>이 PC에서 만든 공문</h2><span class="sub">공문 작성 탭 기록</span></div>${mini(docs.slice(0, 8), (d) => `<li><span class="d">${esc(d.date || "")}</span>${esc(d.program || "")} · ${(+d.amount || 0).toLocaleString("ko-KR")}원 · ${esc(d.co)}</li>`, "이 브라우저에서 이 기업 공문을 만든 기록이 없습니다.")}</section>
+        <section class="panel wide2"><div class="hd"><h2>최근 기사 전체</h2><span class="sub">${news.length}건</span></div>${mini(news.slice(0, 25), ln, "아직 쌓인 기사가 없습니다.")}</section>
+      </div>`;
+  },
+  calendar() {
+    const base = new Date(); base.setDate(1); base.setMonth(base.getMonth() + (st.calOff || 0));
+    const Y = base.getFullYear(), M = base.getMonth() + 1;
+    const C = D.calendar || { seasons: [], events: [] }, A = D.anniv || {};
+    const pad = (n) => String(n).padStart(2, "0");
+    const md = (m, d) => `${pad(m)}-${pad(d)}`;
+    const inSeason = (s, key) => (s.start <= s.end ? key >= s.start && key <= s.end : key >= s.start || key <= s.end);
+    const dayItems = (m, d) => {
+      const key = md(m, d), out = [];
+      for (const e of C.events || []) if (e.date === key) out.push({ cls: e.type === "휴일" ? "hol" : "ev", t: e.title });
+      for (const [co, a] of Object.entries(A)) if (a.md === key) out.push({ cls: "an", t: `${co} ${a.what}기념일` });
+      return out;
+    };
+    const first = new Date(Y, M - 1, 1).getDay(), last = new Date(Y, M, 0).getDate();
+    const today = new Date(), isToday = (d) => today.getFullYear() === Y && today.getMonth() + 1 === M && today.getDate() === d;
+    let cells = "";
+    for (let i = 0; i < first; i++) cells += `<div class="cal-cell off"></div>`;
+    for (let d = 1; d <= last; d++) {
+      const its = dayItems(M, d), wd = (first + d - 1) % 7;
+      cells += `<div class="cal-cell ${isToday(d) ? "today" : ""} ${wd === 0 || its.some((x) => x.cls === "hol") ? "sun" : wd === 6 ? "sat" : ""}"><span class="cal-d">${d}</span>${its.map((x) => `<span class="cal-ev ${x.cls}">${esc(x.t)}</span>`).join("")}</div>`;
+    }
+    const seasons = (C.seasons || []).filter((s) => { for (let d = 1; d <= last; d++) if (inSeason(s, md(M, d))) return true; return false; });
+    // 앞으로 60일 일정
+    const up = [];
+    for (let i = 0; i < 60; i++) {
+      const t = new Date(); t.setDate(t.getDate() + i);
+      const key = md(t.getMonth() + 1, t.getDate());
+      for (const x of dayItems(t.getMonth() + 1, t.getDate())) if (x.cls !== "hol") up.push({ when: `${t.getMonth() + 1}/${t.getDate()}`, left: i, ...x });
+      for (const s of C.seasons || []) if (s.start === key) up.push({ when: `${t.getMonth() + 1}/${t.getDate()}`, left: i, cls: "season", t: `${s.title} 시작` });
+    }
+    return `<div class="cal-wrap">
+      <section class="panel cal-main"><div class="hd"><button class="gm-btn" data-cal="-1" aria-label="이전 달">‹</button><h2>${Y}년 ${M}월</h2><button class="gm-btn" data-cal="1" aria-label="다음 달">›</button>${st.calOff ? `<button class="gm-btn" data-cal="0">이번 달</button>` : ""}
+        <span class="sub legend"><span><i style="background:var(--good)"></i>창립기념일</span><span><i style="background:var(--warn)"></i>휴일</span></span></div>
+        ${seasons.length ? `<div class="cal-seasons">${seasons.map((s) => `<span class="cal-season"><b>${esc(s.title)}</b> ${s.start.replace("-", "/")}~${s.end.replace("-", "/")}${s.note ? ` · ${esc(s.note)}` : ""}</span>`).join("")}</div>` : ""}
+        <div class="cal-grid">${["일", "월", "화", "수", "목", "금", "토"].map((w) => `<div class="cal-h">${w}</div>`).join("")}${cells}</div></section>
+      <section class="panel cal-side"><div class="hd"><h2>다가오는 일정</h2><span class="sub">앞으로 60일</span></div>
+        ${up.length ? `<ul class="sum-list">${up.map((x) => `<li><span class="d">${x.when}</span><span class="cal-ev ${x.cls}">${esc(x.t)}</span>${x.left === 0 ? " <b>오늘</b>" : x.left <= 7 ? ` <span class="pill warn">D-${x.left}</span>` : ""}</li>`).join("")}</ul>` : `<p class="sum-empty">60일 안에 등록된 일정이 없습니다.</p>`}
+        <p class="sum-empty">창립기념일은 뉴스에 난 기념식 기사 날짜 기준이라 실제 날짜와 하루 이틀 다를 수 있습니다. 시즌은 예년 기준입니다. 팀 일정 추가는 GitHub의 calendar.json에서 합니다.</p></section>
+    </div>`;
+  },
   msg() {
     const list = D.digest || [];
     if (!list.length) return `<div class="empty">아직 만들어진 메시지가 없습니다. 오전 10시·오후 4시 업데이트 때 자동으로 만들어집니다.</div>`;
@@ -408,6 +519,13 @@ const V = {
   },
 };
 
+let HIST = null, histLoading = false;
+let WATCH = new Set();
+function loadHist() {
+  if (histLoading) return; histLoading = true;
+  fetch("history.json").then((r) => r.json()).then((h) => { HIST = h; if (view === "company") render(); })
+    .catch(() => { HIST = {}; if (view === "company") render(); });
+}
 function render() {
   $("#nav").innerHTML = TABS.map(([k, label]) => {
     const n = { people: prPeople().length, obituary: keyObits().length, signals: cautionNews().length }[k];
@@ -426,12 +544,18 @@ document.addEventListener("click", async (e) => {
     cp.textContent = "복사됨 ✓"; setTimeout(() => (cp.textContent = "복사"), 1800);
     return;
   }
+  const cal = e.target.closest("[data-cal]");
+  if (cal) { st.calOff = cal.dataset.cal === "0" ? 0 : (st.calOff || 0) + +cal.dataset.cal; render(); return; }
+  const sum = e.target.closest("[data-sum]");
+  if (sum) { e.preventDefault(); st.sumCo = sum.dataset.sum; location.hash = "company"; return; }
   const c = e.target.closest(".chip"); if (c) { st[c.dataset.k] = c.dataset.v; render(); return; }
   const b = e.target.closest(".cobtn"); if (b) { st.co = b.dataset.co; $("#q").value = ""; q = ""; render(); }
 });
 document.addEventListener("change", (e) => {
   if (e.target.id === "prOnly" || e.target.id === "myOnly") { st[e.target.id] = e.target.checked; render(); }
   if (e.target.id === "cosel") { st.co = e.target.value; render(); }
+  if (e.target.id === "prWatch") { st.prWatch = e.target.checked; render(); }
+  if (e.target.id === "sumSel") { st.sumCo = e.target.value; render(); }
 });
 $("#q").addEventListener("input", (e) => { q = e.target.value.trim().toLowerCase(); if (view !== "gongmun") render(); });
 window.addEventListener("hashchange", route);
@@ -439,6 +563,7 @@ window.addEventListener("gm-rerender", () => { if (view === "gongmun") render();
 
 fetch("data.json").then((r) => r.json()).then((d) => {
   D = d;
+  WATCH = new Set(D.companies.filter((c) => c.watch).map((c) => c.name));
   const fmt = (iso) => { const u = new Date(iso); return `${u.getMonth() + 1}/${u.getDate()} ${String(u.getHours()).padStart(2, "0")}:${String(u.getMinutes()).padStart(2, "0")}`; };
   const pu = D.peopleUpdated && D.peopleUpdated > D.updated ? ` · 인사·부고 ${fmt(D.peopleUpdated)}` : "";
   $("#upd").textContent = `전체 ${fmt(D.updated)}${pu} 업데이트`;

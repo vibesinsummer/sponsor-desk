@@ -307,6 +307,9 @@ const PROGRAMS = {
       holder.remove();
       LS.set("co." + st.co, { ref: st.ref, program: st.program, amount: amountNum(), vat: st.vat });
       LS.set("lastDocnum", st.docnum);
+      // 기업 요약 탭의 '이 PC에서 만든 공문' 기록 (최근 200건)
+      const log = LS.get("log", []); log.unshift({ date: st.date, co: st.co, program: P().file || st.program, amount: amountNum(), type: st.type });
+      LS.set("log", log.slice(0, 200));
       msg.textContent = `저장했습니다: ${name}`;
     } catch (e) {
       msg.textContent = "PDF를 만들지 못했습니다. 인터넷 연결을 확인한 뒤 다시 눌러 주세요.";

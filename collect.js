@@ -197,6 +197,9 @@ async function collectSponsor() {
   }
   // 인사·부고 단체 메시지 (오전·오후) 갱신
   data.digest = require("./digest")(data, prev.digest);
+  // 기록 쌓기: 한 달치 기업 기록(history.json), 홍보 라인 명단, 창립기념일
+  try { Object.assign(data, require("./history")(data)); } catch (e) { console.warn("기록 쌓기 실패:", e.message); }
+  try { data.calendar = JSON.parse(fs.readFileSync(path.join(__dirname, "calendar.json"), "utf8")); } catch {}
   fs.writeFileSync(OUT, JSON.stringify(data));
   console.log(`완료 ${((Date.now() - t0) / 1000).toFixed(1)}초 | 기업뉴스 ${news.length} · 협찬동향 ${sponsor.length} · 인사 ${people.personnel.length} · 임원인사(타매체) ${people.execNews.length} · 부고 ${people.obituary.length}`);
 })();
