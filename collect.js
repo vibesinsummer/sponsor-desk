@@ -195,6 +195,8 @@ async function collectSponsor() {
     data.briefing = require("./briefing")(data);
     fs.writeFileSync(BRIEF, JSON.stringify(data.briefing, null, 2));
   }
+  // 인사·부고 단체 메시지 (오전·오후) 갱신
+  data.digest = require("./digest")(data, prev.digest);
   fs.writeFileSync(OUT, JSON.stringify(data));
   console.log(`완료 ${((Date.now() - t0) / 1000).toFixed(1)}초 | 기업뉴스 ${news.length} · 협찬동향 ${sponsor.length} · 인사 ${people.personnel.length} · 임원인사(타매체) ${people.execNews.length} · 부고 ${people.obituary.length}`);
 })();

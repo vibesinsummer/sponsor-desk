@@ -180,6 +180,13 @@ h2 { font-size: 15px; margin: 0; text-wrap: balance; }
 .gm-f textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); font: inherit; resize: vertical; }
 @media (max-width: 900px) { .gm-grid { grid-template-columns: minmax(0, 1fr); } }
 
+/* 인사·부고 단체 메시지 */
+.msg-intro { background: var(--accent-soft); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
+.msg-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); gap: 14px; align-items: start; }
+.msg-card .hd .gm-btn { margin-left: auto; }
+.msg-card.latest { border-color: var(--accent); }
+.msg-text { display: block; width: 100%; box-sizing: border-box; border: 0; border-top: 1px solid var(--line); padding: 12px 16px; font: 13px/1.6 var(--sans); color: var(--ink); background: var(--surface); resize: vertical; border-radius: 0 0 8px 8px; }
+
 /* 기업 뉴스 */
 .split { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
 .colist { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 112px); max-height: calc(100vh - 140px); overflow: auto; }
@@ -227,7 +234,7 @@ h2 { font-size: 15px; margin: 0; text-wrap: balance; }
 <script>
 const TABS = [
   ["briefing", "브리핑"], ["signals", "기회 알림"], ["news", "기업 뉴스"],
-  ["people", "인사"], ["obituary", "부고"], ["sponsor", "협찬 동향"], ["gongmun", "공문 작성"],
+  ["people", "인사"], ["obituary", "부고"], ["sponsor", "협찬 동향"], ["msg", "인사·부고 메시지"], ["gongmun", "공문 작성"],
 ];
 let D = null, view = "briefing", q = "";
 const st = { tag: "전체", grp: "전체", co: null, prOnly: false, myOnly: false, obi: "주요", sp: "전체" };
@@ -384,6 +391,18 @@ const V = {
       ${list(s, (x) => row({ when: ago(x.date), src: x.source, title: x.title, link: x.link,
         pills: pill(x.type, x.type === "PPL" || x.type === "협찬·제작지원" ? "pr" : "") + x.companies.map((c) => pill(c, "co")).join("") + x.media.map((m) => pill(m)).join("") + dup(x.dupes) }))}</section>`;
   },
+  msg() {
+    const list = D.digest || [];
+    if (!list.length) return `<div class="empty">아직 만들어진 메시지가 없습니다. 오전 10시·오후 4시 업데이트 때 자동으로 만들어집니다.</div>`;
+    const t = (iso) => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+    return `<div class="msg-intro">매일 <b>오전 10시</b>(전 영업일 16시 이후 소식)·<b>오후 4시</b>(당일 10시 이후 소식)에 자동으로 만들어집니다. <b>복사</b>를 누르고 메신저에 붙여넣으세요.</div>
+      <div class="msg-list">${list.map((e, i) => `<section class="panel msg-card ${i === 0 ? "latest" : ""}">
+        <div class="hd"><h2>${esc(e.date.slice(5).replace("-", "월 ").replace(/^0/, ""))}일 ${esc(e.slot)}</h2>
+          <span class="sub">인사 ${e.people.length} · 부고 ${e.obits.length} · ${t(e.made)} 작성</span>
+          <button type="button" class="gm-btn primary msg-copy" data-i="${i}">복사</button></div>
+        <textarea class="msg-text" id="msgText${i}" readonly rows="${Math.min(18, e.text.split("\n").length + 1)}">${esc(e.text)}</textarea>
+      </section>`).join("")}</div>`;
+  },
   gongmun() {
     return window.GM ? GM.html(D) : `<div class="empty">공문 작성기를 불러오지 못했습니다. 페이지를 새로고침해 주세요.</div>`;
   },
@@ -399,7 +418,14 @@ function render() {
 }
 function route() { const h = location.hash.slice(1); view = TABS.some(([k]) => k === h) ? h : "briefing"; render(); window.scrollTo(0, 0); }
 
-document.addEventListener("click", (e) => {
+document.addEventListener("click", async (e) => {
+  const cp = e.target.closest(".msg-copy");
+  if (cp) {
+    const ta = document.getElementById("msgText" + cp.dataset.i);
+    try { await navigator.clipboard.writeText(ta.value); } catch { ta.select(); document.execCommand("copy"); }
+    cp.textContent = "복사됨 ✓"; setTimeout(() => (cp.textContent = "복사"), 1800);
+    return;
+  }
   const c = e.target.closest(".chip"); if (c) { st[c.dataset.k] = c.dataset.v; render(); return; }
   const b = e.target.closest(".cobtn"); if (b) { st.co = b.dataset.co; $("#q").value = ""; q = ""; render(); }
 });
