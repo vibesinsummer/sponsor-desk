@@ -19,14 +19,16 @@
 
 ## 자동 업데이트 시간 (한국시간, 매일)
 
+**09:00 ~ 20:30, 30분마다** 업데이트합니다 (하루 24번). 실행 신호는 외부 무료 서비스 **cron-job.org**가 정시에 보냅니다.
+
 | 시간 | 하는 일 |
 |---|---|
 | 09:00 | 전체 수집 + 브리핑 새로 작성 |
-| 10:00 | 인사·부고만 수집 |
-| 16:00 | 인사·부고 포함 전체 수집 (브리핑은 오전 것 유지) |
-| 16:30 | 인사·부고만 수집 → 오후 단체 메시지 작성 (17:00~17:30 발송용) |
+| 09:30 ~ 20:30 (30분마다) | 전체 수집 (기업 뉴스·부정이슈·인사·부고·협찬 동향) |
+| 10:00 | + 오전 인사·부고 메시지 작성 (10:30 이후엔 고정) |
+| 16:30 | + 오후 인사·부고 메시지 작성 (17:00~17:30 발송용, 17:05 이후엔 고정). 주말은 하루 1개 |
 
-GitHub 사정에 따라 몇 분~30분 정도 늦게 실행될 수 있습니다.
+GitHub 자체 예약은 크게 늦어지는 일이 있어 쓰지 않습니다.
 
 ## 파일 구성
 
@@ -85,14 +87,14 @@ GitHub 사정에 따라 몇 분~30분 정도 늦게 실행될 수 있습니다.
 - `cautionExcept`: 부정 단어가 들어 있지만 부정 뜻이 아닌 말 (예: '문화재단'의 '화재', '삼성화재')
 
 ### 업데이트 시간 바꾸기
-`.github/workflows/update.yml`의 `cron` 줄을 고칩니다. **UTC 기준**이라 한국시간에서 9시간을 뺍니다.
-- 한국 09:00 → `"0 0 * * *"`, 한국 16:00 → `"0 7 * * *"`
-- 평일만: 끝의 `*`를 `1-5`로 (예: `"0 0 * * 1-5"`)
-- 시간을 바꾸면 같은 파일 아래쪽 `실행 종류 정하기`의 cron 문자열도 똑같이 바꿔야 합니다.
+cron-job.org (https://console.cron-job.org) → Cronjobs → `30분마다 자동 업데이트` → **EDIT** → Execution schedule에서 시간(Hours)·분(Minutes)을 고칩니다.
+- 설정값: URL `https://api.github.com/repos/vibesinsummer/sponsor-desk/actions/workflows/update.yml/dispatches`, POST, 본문 `{"ref":"main","inputs":{"mode":"auto"}}`
+- 헤더: `Authorization: Bearer <GitHub 토큰>`, `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`, `Content-Type: application/json`
+- 토큰: GitHub → Settings → Developer settings → Fine-grained tokens → `cron-job` (sponsor-desk 저장소, Actions 읽기·쓰기만). 노출되면 Delete 후 새로 만들어 cron-job.org에 다시 넣습니다.
 
 ### 지금 바로 업데이트
-`Actions` → `자동 업데이트` → `Run workflow` → 종류 선택
-- `brief`: 전체 + 브리핑 / `full`: 전체 / `people`: 인사·부고만
+cron-job.org 작업의 **TEST RUN**을 누르거나, GitHub `Actions` → `자동 업데이트` → `Run workflow` → 종류 선택
+- `auto`: 시각에 맞춰 자동 / `brief`: 전체 + 브리핑 / `full`: 전체 / `people`: 인사·부고만
 
 ---
 
