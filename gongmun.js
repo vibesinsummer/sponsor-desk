@@ -13,13 +13,13 @@
 //  ▶ inputs: 이 양식에만 필요한 입력칸 — dates(노출 날짜) / schedule(편성표) / count(노출 횟수)
 // ─────────────────────────────────────────────────────────────
 const SENDER = { company: "제이티비씨(주) 대표이사", name: "전 진 배", prefix: "JTBC" };
-const TYPES = ["프로그램 협찬", "캠페인 협찬", "배너 협찬"];
+const TYPES = ["프로그램 협찬", "캠페인 협찬", "배너 협찬", "기타 공문"];
 const P_1 = "1. 국내외 불확실한 경제 상황 속에서도 대한민국 경제발전을 위해 각고의 노력을 기울이고 계신 귀사의 무궁한 발전을 기원합니다.";
 const P_2 = "2. 저희 JTBC는 지금까지의 경험을 바탕으로, 보다 알차고 의미있는 프로그램을 지속적으로 기획 및 제작하여 사회적으로 기여할 수 있도록 노력하겠습니다. 또한, 언제나처럼 책임있는 언론의 역할을 충실히 할 것을 약속드립니다. 많은 관심과 질책을 부탁드립니다.";
 const PROGRAMS = {
   // ── 프로그램 협찬 ──────────────────────────
   "장르가머니": {
-    type: "프로그램 협찬", file: "장르가머니", inputs: ["dates"], weekday: 5,
+    type: "프로그램 협찬", file: "장르가머니", docx: "assets/templates/genre.docx", inputs: ["dates"], weekday: 5,
     title: "JTBC <{프로그램}> 프로그램 협찬 요청의 건",
     body: [
       P_1, P_2,
@@ -35,7 +35,7 @@ const PROGRAMS = {
     seq: "D D P0 B P1 B P2 B P3 B C B11 I0 I1 I2 N B15 DATE B15 SIGN", sign: "indent",
   },
   "예능 프로그램": {
-    type: "프로그램 협찬", file: "예능프로그램", inputs: ["schedule"],
+    type: "프로그램 협찬", file: "예능프로그램", docx: "assets/templates/yeneung.docx", inputs: ["schedule"],
     title: "JTBC 예능프로그램 협찬 요청의 건",
     body: [
       "1. 국내외 불확실한 경제 상황 속에서도 대한민국 경제발전을 위해 각고의 노력을 기울이며, 국민의 금융 동반자로서 따뜻하고 신뢰받는 서비스를 제공해 오신 귀사의 노고에 깊은 존경과 감사를 드립니다.",
@@ -56,7 +56,7 @@ const PROGRAMS = {
   },
   // ── 캠페인 협찬 ────────────────────────────
   "환경캠페인": {
-    type: "캠페인 협찬", file: "환경캠페인", inputs: ["count"], count: "23",
+    type: "캠페인 협찬", file: "환경캠페인", docx: "assets/templates/campaign.docx", inputs: ["count"], count: "23",
     title: "JTBC 환경캠페인 협찬 요청의 건",
     body: [
       P_1, P_2,
@@ -73,7 +73,7 @@ const PROGRAMS = {
   },
   // ── 배너 협찬 ──────────────────────────────
   "온라인 배너": {
-    type: "배너 협찬", file: "온라인 배너", inputs: [], datePad: true,
+    type: "배너 협찬", file: "온라인 배너", docx: "assets/templates/banner.docx", inputs: [], datePad: true,
     title: "JTBC 온라인 배너광고 게재 요청의 건",
     body: [
       P_1, P_2,
@@ -126,9 +126,17 @@ const PROGRAMS = {
     month: thisMonth(), dates: "", amount: "", vat: "별도", date: today(), docnum: LS.get("lastDocnum", ""),
     seal: LS.get("seal", null),
   };
-  const P = () => PROGRAMS[st.program] || PROGRAMS[firstProgram];
+  const CUSTOM = () => LS.get("custom", {});
+  const BASE = (name) => PROGRAMS[name] || CUSTOM()[name];
+  const ALLNAMES = () => [...Object.keys(PROGRAMS), ...Object.keys(CUSTOM())];
+  const P = () => {
+    const b = BASE(st.program) || PROGRAMS[firstProgram];
+    const o = LS.get("tpl." + st.program, null);
+    return o ? Object.assign({}, b, o) : b;
+  };
+  const edited = () => !!LS.get("tpl." + st.program, null);
   const has = (k) => (P().inputs || []).includes(k);
-  const namesOf = (t) => Object.keys(PROGRAMS).filter((k) => PROGRAMS[k].type === t);
+  const namesOf = (t) => ALLNAMES().filter((k) => (BASE(k) || {}).type === t);
   const scheduleRows = () => st.schedule.split("\n").map((l) => l.split("|").map((c) => c.trim())).filter((r) => r[0]);
   const amountNum = () => +String(st.amount).replace(/[^0-9]/g, "") || 0;
   function resetForProgram() {
@@ -206,6 +214,185 @@ const PROGRAMS = {
     return `<label class="gm-f"><span>${label}</span><input id="${id}" value="${esc(val)}" ${attrs}></label>`;
   }
 
+  // ───────── 문구 수정 ─────────
+  function editorHtml() {
+    const p = P();
+    return `<details class="gm-set" id="gmEdit" ${st.editOpen ? "open" : ""}><summary>문구 수정 <small>${edited() ? "<b class='gm-edited'>수정됨</b> · " : ""}제목·본문·항목을 고치면 이 브라우저의 '${esc(st.program)}' 양식에 저장</small></summary>
+      <div class="gm-fields">
+        <label class="gm-f"><span>제목</span><input id="gt_title" value="${esc(p.title)}"></label>
+        ${p.body.map((b, i) => `<label class="gm-f"><span>본문 ${i + 1}</span><textarea id="gt_body_${i}" rows="${Math.min(7, Math.ceil(b.length / 42) + 1)}">${esc(b)}</textarea></label>`).join("")}
+        ${p.items.map((it, i) => `<div class="gm-row gm-row-item"><label class="gm-f"><span>항목 ${i + 1} 이름</span><input id="gt_ik_${i}" value="${esc(it[0])}"></label><label class="gm-f"><span>내용</span><input id="gt_iv_${i}" value="${esc(it[1])}"></label></div>`).join("")}
+        ${p.note != null ? `<label class="gm-f"><span>별첨 문구</span><input id="gt_note" value="${esc(p.note)}"></label>` : ""}
+        <p class="gm-muted" style="padding:0">{금액} {부가세} {횟수} {날짜목록} {노출횟수} {연} {월} {프로그램} 자리는 입력값으로 자동으로 채워집니다.</p>
+        <div class="gm-actions" style="padding:0">${edited() ? `<button type="button" class="gm-btn" data-gmreset="1">원래 문구로 되돌리기</button>` : ""}
+          ${CUSTOM()[st.program] ? `<button type="button" class="gm-btn" data-gmdelcustom="1">이 올린 양식 삭제</button>` : ""}</div>
+      </div></details>`;
+  }
+  function onEdit(e) {
+    const id = e.target.id, p = P();
+    const o = LS.get("tpl." + st.program, null) || { title: p.title, body: [...p.body], items: p.items.map((x) => [...x]), note: p.note };
+    let m;
+    if (id === "gt_title") o.title = e.target.value;
+    else if (id === "gt_note") o.note = e.target.value;
+    else if ((m = /^gt_body_(\d+)$/.exec(id))) o.body[+m[1]] = e.target.value;
+    else if ((m = /^gt_ik_(\d+)$/.exec(id))) o.items[+m[1]][0] = e.target.value;
+    else if ((m = /^gt_iv_(\d+)$/.exec(id))) o.items[+m[1]][1] = e.target.value;
+    else return;
+    LS.set("tpl." + st.program, o);
+    refreshPreview();
+  }
+
+  // ───────── 새 공문 양식 올리기 (docx) ─────────
+  function uploadHtml() {
+    return `<details class="gm-set"><summary>새 공문 양식 올리기 <small>docx 공문을 올리면 그 서식으로 PDF·Word를 만듦 · 이 브라우저에 저장</small></summary>
+      <div class="gm-fields">
+        <div class="gm-row">
+          <label class="gm-f"><span>양식 이름</span><input id="gu_name" placeholder="예: 신년 특집 프로그램"></label>
+          <label class="gm-f"><span>공문 유형</span><select id="gu_type">${TYPES.map((t) => `<option>${esc(t)}</option>`).join("")}</select></label>
+        </div>
+        <label class="gm-btn" style="align-self:flex-start">docx 파일 선택<input type="file" id="gu_file" accept=".docx" hidden></label>
+        <p class="gm-muted" style="padding:0">부서 샘플과 같은 구조(수신·참조·제목 표, 본문, '- 다 음 -', □ 항목, 날짜)면 자동으로 읽습니다. 다른 사람도 쓰게 하려면 파일을 관리자에게 보내 기본 양식으로 넣으면 됩니다.</p>
+      </div></details>`;
+  }
+
+  // ───────── docx 다루기 (원본 서식 그대로 내용만 바꿈) ─────────
+  const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+  let zipLib = null;
+  function loadZip() {
+    if (window.JSZip) return Promise.resolve();
+    if (zipLib) return zipLib;
+    zipLib = new Promise((ok, no) => {
+      const s2 = document.createElement("script");
+      s2.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+      s2.onload = ok; s2.onerror = () => { zipLib = null; no(new Error("load")); };
+      document.head.appendChild(s2);
+    });
+    return zipLib;
+  }
+  const tOf = (p) => [...p.getElementsByTagNameNS(W, "t")].map((t) => t.textContent).join("");
+  function setText(p, text) {
+    const ts = [...p.getElementsByTagNameNS(W, "t")];
+    if (!ts.length) return;
+    ts[0].textContent = text; ts[0].setAttribute("xml:space", "preserve");
+    ts.slice(1).forEach((t) => { t.textContent = ""; });
+  }
+  // 문서 구조 읽기: 머리 표(수신·참조·제목), 본문 문단, 다음, □ 항목, ※, 날짜, 편성표
+  function readDoc(doc) {
+    const body = doc.getElementsByTagNameNS(W, "body")[0];
+    const blocks = [...body.childNodes].filter((n) => n.namespaceURI === W && (n.localName === "p" || n.localName === "tbl"));
+    const out = { head: {}, code: null, body: [], items: [], note: null, date: null, sched: null };
+    const headTbl = blocks.find((b) => b.localName === "tbl" && /수\s*신/.test(tOf(b)));
+    if (headTbl) {
+      for (const tr of headTbl.getElementsByTagNameNS(W, "tr")) {
+        const tcs = [...tr.childNodes].filter((n) => n.localName === "tc");
+        if (tcs.length < 2) continue;
+        const label = tOf(tcs[0]).replace(/\s/g, ""), cellP = tcs[1].getElementsByTagNameNS(W, "p")[0];
+        if (label === "문서기호") out.code = cellP;
+        if (["수신", "참조", "제목"].includes(label)) out.head[label] = cellP;
+      }
+    }
+    let stage = "body";
+    for (const b of blocks) {
+      if (b === headTbl) continue;
+      if (b.localName === "tbl") { if (stage === "items") out.sched = b; continue; }
+      const t = tOf(b).trim();
+      if (!t) continue;
+      if (/^-\s*다\s*음\s*[-–]/.test(t)) { stage = "items"; continue; }
+      if (/^\d{4}년\s*\d{1,2}월\s*\d{1,2}일$/.test(t)) { out.date = b; stage = "end"; continue; }
+      if (stage === "body") out.body.push(b);
+      else if (stage === "items") { if (/^※/.test(t)) out.note = b; else out.items.push(b); }
+    }
+    return out;
+  }
+  async function templateBuffer(p) {
+    if (p.docxData) { const bin = atob(p.docxData.split(",")[1]); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+    const r = await fetch(p.docx); if (!r.ok) throw new Error("틀 없음"); return r.arrayBuffer();
+  }
+  async function downloadDocx() {
+    const msg = document.getElementById("gmMsg");
+    if (!st.co || !amountNum()) { msg.textContent = "수신(협찬처)과 요청 금액을 입력해 주세요."; return; }
+    const p = P();
+    if (!p.docx && !p.docxData) { msg.textContent = "이 양식은 Word 틀이 없어 PDF로만 받을 수 있습니다."; return; }
+    msg.textContent = "Word 파일 만드는 중…";
+    try {
+      await loadZip();
+      const zip = await window.JSZip.loadAsync(await templateBuffer(p));
+      const xml = await zip.file("word/document.xml").async("string");
+      const doc = new DOMParser().parseFromString(xml, "application/xml");
+      const d = readDoc(doc);
+      if (d.code) setText(d.code, docCode());
+      if (d.head["수신"]) setText(d.head["수신"], st.co);
+      if (d.head["참조"]) setText(d.head["참조"], st.ref);
+      if (d.head["제목"]) setText(d.head["제목"], fill(p.title));
+      d.body.forEach((b, i) => setText(b, i < p.body.length ? fill(p.body[i]) : ""));
+      d.items.forEach((b, i) => setText(b, i < p.items.length ? `□ ${p.items[i][0]} : ${fill(p.items[i][1])}` : ""));
+      if (d.note) setText(d.note, p.note != null ? fill(p.note) : "");
+      if (d.date) setText(d.date, dateText());
+      if (d.sched && has("schedule")) {
+        const trs = [...d.sched.childNodes].filter((n) => n.localName === "tr");
+        const tpl = trs[1];
+        if (tpl) {
+          trs.slice(1).forEach((tr) => tr.parentNode.removeChild(tr));
+          for (const r of scheduleRows()) {
+            const tr = tpl.cloneNode(true);
+            [...tr.childNodes].filter((n) => n.localName === "tc").forEach((tc, i) => { const pp = tc.getElementsByTagNameNS(W, "p")[0]; if (pp) setText(pp, r[i] || ""); });
+            d.sched.appendChild(tr);
+          }
+        }
+      }
+      zip.file("word/document.xml", new XMLSerializer().serializeToString(doc));
+      const blob = await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const name = `${(st.date || "").replace(/-/g, "")}_JTBC ${p.file || st.program} 협찬 공문_${st.co}.docx`.replace(/[\\/:*?"<>|]/g, "");
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      remember();
+      msg.textContent = `저장했습니다: ${name}`;
+    } catch (e) {
+      msg.textContent = "Word 파일을 만들지 못했습니다. 인터넷 연결을 확인한 뒤 다시 눌러 주세요.";
+    }
+  }
+  async function uploadTemplate(file) {
+    const msg = document.getElementById("gmMsg");
+    const name = (document.getElementById("gu_name").value || "").trim() || file.name.replace(/\.docx$/i, "").replace(/^\d{8}_/, "").replace(/_[^_]*$/, "").trim();
+    const type = document.getElementById("gu_type").value;
+    if (PROGRAMS[name]) { msg.textContent = `'${name}'은 기본 양식 이름이라 쓸 수 없습니다. 다른 이름을 넣어 주세요.`; return; }
+    msg.textContent = "양식 읽는 중…";
+    try {
+      await loadZip();
+      const buf = await file.arrayBuffer();
+      const zip = await window.JSZip.loadAsync(buf);
+      const doc = new DOMParser().parseFromString(await zip.file("word/document.xml").async("string"), "application/xml");
+      const d = readDoc(doc);
+      if (!d.head["제목"] || !d.body.length) { msg.textContent = "공문 구조(수신·참조·제목 표와 본문)를 찾지 못했습니다. 부서 공문 양식인지 확인해 주세요."; return; }
+      const items = d.items.map((b) => {
+        const t = tOf(b).trim().replace(/^□\s*/, "");
+        const i = t.indexOf(":");
+        let k = i >= 0 ? t.slice(0, i).trim() : t, v = i >= 0 ? t.slice(i + 1).trim() : "";
+        if (/금액/.test(k)) v = "{금액}원 (부가세 {부가세})";
+        return [k, v];
+      });
+      const body = d.body.map((b) => tOf(b).trim());
+      const seq = ["D", "D", ...body.flatMap((_, i) => ["P" + i, "B"]), "C", "B11", ...items.map((_, i) => "I" + i), ...(d.note ? ["N"] : []), "B15", "DATE", "B15", "SIGN"].join(" ");
+      const dataUrl = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(file); });
+      const all = CUSTOM();
+      all[name] = { type, file: name, custom: true, inputs: [], title: tOf(d.head["제목"]).trim(), body, items, note: d.note ? tOf(d.note).trim() : null, seq, sign: "center", signLead: "", docxData: dataUrl };
+      LS.set("custom", all);
+      if (d.head["참조"]) st.ref = tOf(d.head["참조"]).trim() || st.ref;
+      st.type = type; st.program = name; resetForProgram();
+      st.editOpen = true;
+      window.dispatchEvent(new Event("gm-rerender"));
+      setTimeout(() => { const m2 = document.getElementById("gmMsg"); if (m2) m2.textContent = `'${name}' 양식을 등록했습니다. 아래 '문구 수정'에서 내용을 확인해 주세요.`; }, 50);
+    } catch (e) {
+      msg.textContent = "양식을 읽지 못했습니다. docx 파일인지 확인해 주세요.";
+    }
+  }
+  function remember() {
+    LS.set("co." + st.co, { ref: st.ref, program: st.program, amount: amountNum(), vat: st.vat });
+    LS.set("lastDocnum", st.docnum);
+    const log = LS.get("log", []); log.unshift({ date: st.date, co: st.co, program: P().file || st.program, amount: amountNum(), type: st.type });
+    LS.set("log", log.slice(0, 200));
+  }
+
   function html(D) {
     const names = D && D.companies ? D.companies.filter((c) => c.watch && !/전체/.test(c.name)).map((c) => c.name) : [];
     const amt = amountNum();
@@ -215,14 +402,13 @@ const PROGRAMS = {
           <div class="hd"><h2>공문 내용</h2><span class="sub">매달 바뀌는 칸만 입력</span></div>
           <div class="gm-fields">
             <div class="gm-row">
-              <label class="gm-f"><span>공문 유형</span><select id="gm_type">${TYPES.map((t) => `<option ${t === st.type ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>
-              <label class="gm-f"><span>양식</span><select id="gm_program">${namesOf(st.type).map((k) => `<option ${k === st.program ? "selected" : ""}>${esc(k)}</option>`).join("")}</select></label>
+              <label class="gm-f"><span>공문 유형</span><select id="gm_type">${TYPES.filter((t) => namesOf(t).length).map((t) => `<option ${t === st.type ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>
+              <label class="gm-f"><span>양식</span><select id="gm_program">${namesOf(st.type).map((k) => `<option ${k === st.program ? "selected" : ""}>${esc(k)}${CUSTOM()[k] ? " (올린 양식)" : ""}</option>`).join("")}</select></label>
             </div>
             <div class="gm-row">
-              ${field("gm_co", "수신 (협찬처 정식 명칭)", st.co, 'list="gmCoList" placeholder="예: 엔에이치투자증권㈜"')}
+              ${field("gm_co", "수신 (협찬처 정식 명칭)", st.co, 'placeholder="예: 엔에이치투자증권㈜"')}
               ${field("gm_ref", "참조", st.ref, 'placeholder="예: 홍보실"')}
             </div>
-            <datalist id="gmCoList">${names.map((n) => `<option value="${esc(n)}">`).join("")}</datalist>
             <div class="gm-row">
               ${field("gm_month", "협찬 월", st.month, 'type="month"')}
               ${field("gm_date", "문서 날짜", st.date, 'type="date"')}
@@ -239,8 +425,11 @@ const PROGRAMS = {
           </div>
           <div class="gm-actions">
             <button type="button" class="gm-btn primary" id="gmPdf">PDF 다운로드</button>
+            <button type="button" class="gm-btn" id="gmDocx">Word 다운로드</button>
             <span class="gm-msg" id="gmMsg"></span>
           </div>
+${editorHtml()}
+          ${uploadHtml()}
           <details class="gm-set"><summary>직인 이미지 <small>${st.seal ? "등록됨" : "미등록"} · 이 브라우저에만 저장, 사이트에 올라가지 않음</small></summary>
             <div class="gm-seal-box">
               ${st.seal ? `<img src="${st.seal}" alt="등록된 직인">` : `<span class="gm-muted">배경이 투명한 PNG 권장. 등록하면 대표이사 이름 위에 찍힙니다.</span>`}
@@ -305,11 +494,7 @@ const PROGRAMS = {
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       }).from(holder.firstElementChild).save();
       holder.remove();
-      LS.set("co." + st.co, { ref: st.ref, program: st.program, amount: amountNum(), vat: st.vat });
-      LS.set("lastDocnum", st.docnum);
-      // 기업 요약 탭의 '이 PC에서 만든 공문' 기록 (최근 200건)
-      const log = LS.get("log", []); log.unshift({ date: st.date, co: st.co, program: P().file || st.program, amount: amountNum(), type: st.type });
-      LS.set("log", log.slice(0, 200));
+      remember();
       msg.textContent = `저장했습니다: ${name}`;
     } catch (e) {
       msg.textContent = "PDF를 만들지 못했습니다. 인터넷 연결을 확인한 뒤 다시 눌러 주세요.";
@@ -329,7 +514,7 @@ const PROGRAMS = {
       if (prev) {
         Object.assign(st, { ref: prev.ref, amount: String(prev.amount), vat: prev.vat });
         setVal("gm_ref", prev.ref); setVal("gm_amount", (+prev.amount).toLocaleString("ko-KR")); setVal("gm_vat", prev.vat);
-        if (PROGRAMS[prev.program] && prev.program !== st.program) { st.program = prev.program; st.type = PROGRAMS[prev.program].type; resetForProgram(); window.dispatchEvent(new Event("gm-rerender")); return; }
+        if (BASE(prev.program) && prev.program !== st.program) { st.program = prev.program; st.type = BASE(prev.program).type; resetForProgram(); window.dispatchEvent(new Event("gm-rerender")); return; }
         const msg = document.getElementById("gmMsg"); if (msg) msg.textContent = "지난번 이 협찬처에 보낸 내용을 불러왔습니다.";
       }
     }
@@ -341,11 +526,16 @@ const PROGRAMS = {
     fit();
     document.querySelectorAll("#gmPaper img").forEach((im) => { if (!im.complete) im.onload = fit; });
     if (bound) return; bound = true;
-    document.addEventListener("input", (e) => { if (e.target.closest && e.target.closest("#gmForm")) onInput(e); });
+    document.addEventListener("input", (e) => {
+      if (!(e.target.closest && e.target.closest("#gmForm"))) return;
+      if ((e.target.id || "").startsWith("gt_")) onEdit(e); else onInput(e);
+    });
+    document.addEventListener("toggle", (e) => { if (e.target.id === "gmEdit") st.editOpen = e.target.open; }, true);
     document.addEventListener("change", (e) => {
       const id = e.target.id || "";
       if (id === "gm_type") { st.type = e.target.value; st.program = namesOf(st.type)[0]; resetForProgram(); window.dispatchEvent(new Event("gm-rerender")); return; }
       if (["gm_vat", "gm_month", "gm_date", "gm_program"].includes(id)) onInput(e);
+      if (id === "gu_file" && e.target.files[0]) { uploadTemplate(e.target.files[0]); return; }
       if (id === "gm_img_seal" && e.target.files[0]) {
         const r = new FileReader();
         r.onload = () => { st.seal = r.result; LS.set("seal", r.result); window.dispatchEvent(new Event("gm-rerender")); };
@@ -354,6 +544,12 @@ const PROGRAMS = {
     });
     document.addEventListener("click", (e) => {
       if (e.target.id === "gmPdf") download();
+      if (e.target.id === "gmDocx") downloadDocx();
+      if (e.target.dataset && e.target.dataset.gmreset) { LS.del("tpl." + st.program); st.editOpen = true; window.dispatchEvent(new Event("gm-rerender")); }
+      if (e.target.dataset && e.target.dataset.gmdelcustom) {
+        const all = CUSTOM(); delete all[st.program]; LS.set("custom", all); LS.del("tpl." + st.program);
+        st.type = PROGRAMS[firstProgram].type; st.program = firstProgram; resetForProgram(); window.dispatchEvent(new Event("gm-rerender"));
+      }
       if (e.target.dataset && e.target.dataset.gmdel === "seal") { st.seal = null; LS.del("seal"); window.dispatchEvent(new Event("gm-rerender")); }
     });
     window.addEventListener("resize", fit);
