@@ -403,7 +403,7 @@ const PROGRAMS = {
           <div class="gm-fields">
             <div class="gm-row">
               <label class="gm-f"><span>공문 유형</span><select id="gm_type">${TYPES.filter((t) => namesOf(t).length).map((t) => `<option ${t === st.type ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>
-              <label class="gm-f"><span>양식</span><select id="gm_program">${namesOf(st.type).map((k) => `<option ${k === st.program ? "selected" : ""}>${esc(k)}${CUSTOM()[k] ? " (올린 양식)" : ""}</option>`).join("")}</select></label>
+              <label class="gm-f"><span>양식</span><select id="gm_program">${namesOf(st.type).map((k) => `<option value="${esc(k)}" ${k === st.program ? "selected" : ""}>${esc(k)}${CUSTOM()[k] ? " (올린 양식)" : ""}</option>`).join("")}</select></label>
             </div>
             <div class="gm-row">
               ${field("gm_co", "수신 (협찬처 정식 명칭)", st.co, 'placeholder="예: 엔에이치투자증권㈜"')}
