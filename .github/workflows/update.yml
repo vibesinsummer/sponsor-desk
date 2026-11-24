@@ -1,20 +1,15 @@
 # 커뮤니케이션2국 모니터링 자동 업데이트
-# GitHub 예약 시각은 UTC 기준입니다. 한국시간 = UTC + 9시간
-#   한국 09:00 = UTC 00:00  → 전체 수집 + 브리핑 작성
-#   한국 10:00 = UTC 01:00  → 인사·부고만 수집
-#   한국 16:00 = UTC 07:00  → 인사·부고 포함 전체 수집 (브리핑은 오전 것 유지)
-#   한국 16:30 = UTC 07:30  → 인사·부고만 수집 → 오후 단체 메시지 작성 (17:00~17:30 발송용)
-# GitHub 사정에 따라 실제 실행은 몇 분~30분 정도 늦을 수 있습니다.
+# 실행 시각은 외부 서비스 cron-job.org 가 정함 (GitHub 자체 예약은 크게 지연돼서 사용하지 않음)
+#   매일 09:00 ~ 20:30, 30분마다 workflow_dispatch(mode=auto) 호출
+#   auto: 한국 09:00~09:29 = 전체 수집 + 브리핑, 그 외 = 전체 수집(인사·부고 포함)
 # 인사·부고 단체 메시지: 오전은 10:00 실행부터, 오후·주말은 16:30 실행부터 작성 (오전 10:30·오후 17:05 이후엔 고정)
+# cron-job.org 설정: URL=https://api.github.com/repos/vibesinsummer/sponsor-desk/actions/workflows/update.yml/dispatches
+#   POST, 헤더 Authorization: Bearer <토큰>, Accept: application/vnd.github+json, X-GitHub-Api-Version: 2022-11-28, Content-Type: application/json
+#   본문 {"ref":"main","inputs":{"mode":"auto"}}
 
 name: 자동 업데이트
 
 on:
-  schedule:
-    - cron: "0 0 * * *"
-    - cron: "0 1 * * *"
-    - cron: "0 7 * * *"
-    - cron: "30 7 * * *"
   workflow_dispatch:
     inputs:
       mode:
