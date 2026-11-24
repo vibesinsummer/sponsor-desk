@@ -508,7 +508,7 @@ const V = {
     const list = D.digest || [];
     if (!list.length) return `<div class="empty">아직 만들어진 메시지가 없습니다. 오전 10시·오후 4시 업데이트 때 자동으로 만들어집니다.</div>`;
     const t = (iso) => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
-    return `<div class="msg-intro">평일 <b>오전 10시</b>(전날 오후 메시지 이후 소식)·<b>오후 4시 45분</b>(당일 오전 메시지 이후 소식)에 자동으로 만들어집니다. 주말은 하루 1개입니다. <b>복사</b>를 누르고 메신저에 붙여넣으세요.</div>
+    return `<div class="msg-intro">평일 <b>오전 10시</b>(전날 오후 메시지 이후 소식)·<b>오후 4시 30분</b>(당일 오전 메시지 이후 소식)에 자동으로 만들어집니다. 주말은 하루 1개입니다. <b>복사</b>를 누르고 메신저에 붙여넣으세요.</div>
       <div class="msg-list">${list.map((e, i) => `<section class="panel msg-card ${i === 0 ? "latest" : ""}">
         <div class="hd"><h2>${esc(e.date.slice(5).replace("-", "월 ").replace(/^0/, ""))}일 ${esc(e.slot)}</h2>
           <span class="sub">인사 ${e.people.length} · 부고 ${e.obits.length} · ${t(e.made)} 작성</span>

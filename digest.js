@@ -123,6 +123,8 @@ module.exports = function updateDigest(D, prevDigest, now = new Date()) {
   //  (그 뒤에 올라온 소식은 다음 메시지로 넘어감)
   const hour = k.getUTCHours() + k.getUTCMinutes() / 60;
   const exists = (prevDigest || []).some((e) => e.date === date && e.slot === slot);
+  // 작성 시작: 오전 메시지는 10:00 업데이트부터, 오후·주말 메시지는 16:30 업데이트부터 (그 전 실행은 메시지를 건드리지 않음)
+  if ((slot === "오전" && hour < 10) || (slot !== "오전" && hour < 16.5)) return prevDigest || [];
   if (exists && ((slot === "오전" && hour >= 10.5) || (slot !== "오전" && hour >= 17.08))) return prevDigest;
   const others =(prevDigest || []).filter((e) => !(e.date === date && e.slot === slot));
   const last = others.filter((e) => e.range && new Date(e.range[1]) < now).sort((a, b) => b.range[1].localeCompare(a.range[1]))[0];
