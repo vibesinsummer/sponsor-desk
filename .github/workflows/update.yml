@@ -18,11 +18,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "실행 종류 (brief = 전체+브리핑, full = 전체, people = 인사·부고만)"
+        description: "실행 종류 (auto = 시각에 맞춰 자동, brief = 전체+브리핑, full = 전체, people = 인사·부고만)"
         required: true
-        default: "brief"
+        default: "auto"
         type: choice
-        options: [brief, full, people]
+        options: [auto, brief, full, people]
   push:
     branches: [main]
     paths: ["index.html", "gongmun.js", "digest.js", "history.js", "calendar.json", "config.js", "collect.js", "briefing.js", "build.js"]
@@ -56,6 +56,13 @@ jobs:
             workflow_dispatch:*)  MODE="${{ github.event.inputs.mode }}" ;;
             *)                    MODE=none ;;   # 코드만 고친 경우: 수집 없이 사이트 빌드만 점검
           esac
+          # auto (cron-job.org 가 30분마다 호출): 한국 시각 9:00~9:29 는 전체+브리핑, 그 외는 전체 수집
+          #  인사·부고 메시지는 digest.js 규칙대로 오전 10:00·오후 16:30 실행부터 자동 작성
+          if [ "$MODE" = "auto" ]; then
+            HM=$(TZ=Asia/Seoul date +%H%M)
+            if [ "$HM" -ge 0900 ] && [ "$HM" -lt 0930 ]; then MODE=brief; else MODE=full; fi
+            echo "한국 시각 $HM → $MODE"
+          fi
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "실행 종류: $MODE"
 
