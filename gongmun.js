@@ -401,10 +401,7 @@ const PROGRAMS = {
         <form class="panel gm-form" id="gmForm" autocomplete="off" onsubmit="return false">
           <div class="hd"><h2>공문 내용</h2><span class="sub">매달 바뀌는 칸만 입력</span></div>
           <div class="gm-fields">
-            <div class="gm-row">
-              <label class="gm-f"><span>공문 유형</span><select id="gm_type">${TYPES.filter((t) => namesOf(t).length).map((t) => `<option ${t === st.type ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>
-              <label class="gm-f"><span>양식</span><select id="gm_program">${namesOf(st.type).map((k) => `<option value="${esc(k)}" ${k === st.program ? "selected" : ""}>${esc(k)}${CUSTOM()[k] ? " (올린 양식)" : ""}</option>`).join("")}</select></label>
-            </div>
+            <label class="gm-f"><span>공문 양식</span><select id="gm_program">${TYPES.filter((t) => namesOf(t).length).map((t) => `<optgroup label="${esc(t)}">${namesOf(t).map((k) => `<option value="${esc(k)}" ${k === st.program ? "selected" : ""}>${esc(k)}${CUSTOM()[k] ? " (올린 양식)" : ""}</option>`).join("")}</optgroup>`).join("")}</select></label>
             <div class="gm-row">
               ${field("gm_co", "수신 (협찬처 정식 명칭)", st.co, 'placeholder="예: 엔에이치투자증권㈜"')}
               ${field("gm_ref", "참조", st.ref, 'placeholder="예: 홍보실"')}
@@ -506,7 +503,7 @@ ${editorHtml()}
     const k = id.slice(3);
     if (k === "amount") { const n = e.target.value.replace(/[^0-9]/g, ""); st.amount = n; e.target.value = n ? (+n).toLocaleString("ko-KR") : ""; }
     else st[k] = e.target.value;
-    if (k === "program") { resetForProgram(); window.dispatchEvent(new Event("gm-rerender")); return; }
+    if (k === "program") { st.type = (BASE(st.program) || {}).type || st.type; resetForProgram(); window.dispatchEvent(new Event("gm-rerender")); return; }
     if (k === "month") { st.dates = airDates(st.month, P().weekday); setVal("gm_dates", st.dates); }
     if (k === "schedule" || k === "count") LS.set(k + "." + st.program, st[k]);
     if (k === "co") {
