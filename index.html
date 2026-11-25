@@ -221,6 +221,7 @@ h2 { font-size: 15px; margin: 0; text-wrap: balance; }
 .cal-ev.hol { background: var(--warn-soft); color: var(--warn); }
 .cal-ev.season { background: var(--accent-soft); color: var(--accent); }
 .cal-ev.mem { background: var(--pr-soft); color: var(--pr); }
+.cal-ev.med { background: var(--good-soft); color: var(--ink); box-shadow: inset 3px 0 0 var(--good); }
 .cal-ev.nev { background: var(--accent-soft); color: var(--accent); border: 1px dashed var(--accent); }
 .cal-cell a:hover .cal-ev, .cal-side a:hover .cal-ev { text-decoration: underline; }
 .cal-side .sum-list li { line-height: 1.6; }
@@ -475,11 +476,17 @@ const V = {
     const pad = (n) => String(n).padStart(2, "0");
     const md = (m, d) => `${pad(m)}-${pad(d)}`;
     const inSeason = (s, key) => (s.start <= s.end ? key >= s.start && key <= s.end : key >= s.start || key <= s.end);
+    // 해마다 바뀌는 날: {m, wd, n} = m월 n째 wd요일 / {m, last:true} = m월 마지막 날 → 'MM-DD'
+    const ruleKey = (r, y) => {
+      if (r.last) return md(r.m, new Date(y, r.m, 0).getDate());
+      const first = new Date(y, r.m - 1, 1).getDay();
+      return md(r.m, 1 + ((r.wd - first + 7) % 7) + (r.n - 1) * 7);
+    };
     const dayItems = (m, d, y = Y) => {
       const key = md(m, d), out = [];
       for (const e of C.events || []) if (e.date === key) out.push({ cls: e.type === "휴일" ? "hol" : "ev", t: e.title });
       for (const [co, a] of Object.entries(A)) if (a.md === key) out.push({ cls: "an", t: `${co} ${a.what}기념일` });
-      for (const e of C.memorials || []) if (e.date === key) out.push({ cls: "mem", t: e.title, note: e.for });
+      for (const e of C.memorials || []) if ((e.rule ? ruleKey(e.rule, y) : e.date) === key) out.push({ cls: e.cat === "제약" ? "med" : "mem", t: e.title, note: e.for });
       const full = `${y}-${key}`;
       for (const e of D.newsEvents || []) if (e.date === full) out.push({ cls: "nev", t: e.company, full: e.title, link: e.link });
       return out;
@@ -510,7 +517,7 @@ const V = {
     }
     return `<div class="cal-wrap">
       <section class="panel cal-main"><div class="hd"><button class="gm-btn" data-cal="-1" aria-label="이전 달">‹</button><h2>${Y}년 ${M}월</h2><button class="gm-btn" data-cal="1" aria-label="다음 달">›</button>${st.calOff ? `<button class="gm-btn" data-cal="0">이번 달</button>` : ""}
-        <span class="sub legend"><span><i style="background:var(--good)"></i>창립기념일</span><span><i style="background:var(--pr)"></i>캠페인 기념일</span><span><i style="background:var(--accent)"></i>영업처 행사(뉴스 감지)</span><span><i style="background:var(--warn)"></i>휴일</span></span></div>
+        <span class="sub legend"><span><i style="background:var(--good)"></i>창립기념일</span><span><i style="background:var(--pr)"></i>캠페인 기념일</span><span><i style="background:var(--good);opacity:.55"></i>보건·질환의 날</span><span><i style="background:var(--accent)"></i>영업처 행사(뉴스 감지)</span><span><i style="background:var(--warn)"></i>휴일</span></span></div>
         ${seasons.length ? `<div class="cal-seasons">${seasons.map((s) => `<span class="cal-season"><b>${esc(s.title)}</b> ${s.start.replace("-", "/")}~${s.end.replace("-", "/")}${s.note ? ` · ${esc(s.note)}` : ""}</span>`).join("")}</div>` : ""}
         <div class="cal-grid">${["일", "월", "화", "수", "목", "금", "토"].map((w) => `<div class="cal-h">${w}</div>`).join("")}${cells}</div></section>
       <section class="panel cal-side"><div class="hd"><h2>다가오는 일정</h2><span class="sub">앞으로 60일</span></div>
