@@ -77,8 +77,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data.json briefing.json history.json prlog.json anniv.json
           git diff --cached --quiet || git commit -m "자동 업데이트 (${{ steps.mode.outputs.mode }})"
-          git pull --rebase
-          git push
+          # 다른 실행의 저장과 겹쳐도 실패하지 않게: 충돌 나면 방금 수집한 결과를 우선, 최대 5번 재시도
+          for i in 1 2 3 4 5; do
+            git pull --rebase -X theirs && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "저장 재시도 $i"; sleep $((i * 5))
+          done
+          exit 1
 
       # 사이트 파일이 제대로 만들어지는지 점검만 함 (실제 게시는 Vercel)
       - name: 사이트 빌드 점검
