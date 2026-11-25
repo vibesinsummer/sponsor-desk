@@ -114,14 +114,24 @@ function subjectOf(title) {
   const w = (t.split(/[\s,·…:]/)[0] || "").replace(/['"‘’“”]/g, "");
   return w && w.length <= 20 && /[가-힣A-Za-z]/.test(w) ? w : "";
 }
+// 행사 주체가 그 주요영업처(또는 계열사) 자신인지: 주체 이름에 관리 목록의 식별 단어가 들어 있어야 함
+//  예) 현대그린푸드 → 현대백화점그룹(식별 단어 '현대그린푸드') O / 오창산단 → KT그룹 X / 티움바이오 → NH투자증권 X
+function isHost(org, companyName) {
+  const c = cfg.companies.find((x) => x.name === companyName);
+  if (!c || !org) return false;
+  if ((c.exclude || []).some((w) => org.includes(w))) return false;
+  return c.match.some((w) => (/^[A-Za-z]/.test(w) ? new RegExp(`(^|[^A-Za-z])${w}(?![A-Za-z])`).test(org) : org.includes(w)));
+}
 function updateNewsEvents(D, now) {
-  const E = read("newsevents.json", []);
+  let E = read("newsevents.json", []);
   for (const e of E) if (!e.org) e.org = subjectOf(e.title) || e.company;
+  E = E.filter((e) => isHost(e.org, e.company)); // 주요영업처가 주최하는 행사만
   const have = new Set(E.map((e) => e.company + norm(e.title)));
   for (const n of D.news || []) {
     if (!n.watch || !n.rel || !EVENT_WORD.test(n.title) || EVENT_NOT.test(n.title)) continue;
     const date = eventDate(n.title, n.date);
     if (!date) continue;
+    if (!isHost(subjectOf(n.title), n.company)) continue; // 다른 회사·기관이 주최한 행사 제외
     const key = n.company + norm(n.title);
     if (have.has(key)) continue;
     // 같은 기업·같은 날짜 행사는 한 건만
