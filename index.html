@@ -488,13 +488,18 @@ const V = {
       for (const [co, a] of Object.entries(A)) if (a.md === key) out.push({ cls: "an", t: `${co} ${a.what}기념일` });
       for (const e of C.memorials || []) if ((e.rule ? ruleKey(e.rule, y) : e.date) === key) out.push({ cls: e.cat === "제약" ? "med" : "mem", t: e.title, note: e.for });
       const full = `${y}-${key}`;
-      for (const e of D.newsEvents || []) if (e.date === full) out.push({ cls: "nev", t: e.company, full: e.title, link: e.link });
+      for (const e of D.newsEvents || []) if (e.date === full) {
+        const org = e.org || e.company;
+        out.push({ cls: "nev", t: org, grp: org.includes(e.company) || e.company.includes(org) ? "" : e.company, full: e.title, link: e.link });
+      }
       return out;
     };
     // 칸 하나에 표시: 뉴스 감지 행사는 기사 링크, 기념일은 연결 상품을 말풍선으로
     const chip = (x, long) => {
       const tip = x.full || x.note || "";
-      const text = long && x.cls === "nev" ? `${x.t} · ${x.full}` : long && x.note ? `${x.t} → ${x.note}` : x.cls === "nev" ? `${x.t} 행사` : x.t;
+      // 뉴스 행사: 실제 회사명 표시, 관리 그룹이 다르면 괄호로 (예: 현대그린푸드 (현대백화점그룹))
+      const who = x.cls === "nev" ? `${x.t}${x.grp ? ` (${x.grp})` : ""}` : x.t;
+      const text = long && x.cls === "nev" ? `${who} · ${x.full}` : long && x.note ? `${x.t} → ${x.note}` : x.cls === "nev" ? `${who} 행사` : x.t;
       const inner = `<span class="cal-ev ${x.cls}" title="${esc(tip)}">${esc(text)}</span>`;
       return x.link ? `<a href="${esc(x.link)}" target="_blank" rel="noopener">${inner}</a>` : inner;
     };

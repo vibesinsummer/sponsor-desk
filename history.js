@@ -108,8 +108,15 @@ function eventDate(title, iso) {
   if (diff < -1 || diff > 120) return null; // 지난 행사·너무 먼 날짜 제외
   return dt.toISOString().slice(0, 10);
 }
+// 기사 제목의 실제 주체(회사·기관) 이름: 맨 앞 단어 (예: "현대그린푸드, 26일 …" → 현대그린푸드)
+function subjectOf(title) {
+  const t = title.replace(/^\s*(\[[^\]]*\]|\([^)]*\)|【[^】]*】)\s*/g, "").trim();
+  const w = (t.split(/[\s,·…:]/)[0] || "").replace(/['"‘’“”]/g, "");
+  return w && w.length <= 20 && /[가-힣A-Za-z]/.test(w) ? w : "";
+}
 function updateNewsEvents(D, now) {
   const E = read("newsevents.json", []);
+  for (const e of E) if (!e.org) e.org = subjectOf(e.title) || e.company;
   const have = new Set(E.map((e) => e.company + norm(e.title)));
   for (const n of D.news || []) {
     if (!n.watch || !n.rel || !EVENT_WORD.test(n.title) || EVENT_NOT.test(n.title)) continue;
@@ -120,7 +127,7 @@ function updateNewsEvents(D, now) {
     // 같은 기업·같은 날짜 행사는 한 건만
     if (E.some((e) => e.company === n.company && e.date === date)) continue;
     have.add(key);
-    E.push({ date, company: n.company, title: n.title, link: n.link, source: n.source, found: kstDay(now) });
+    E.push({ date, org: subjectOf(n.title) || n.company, company: n.company, title: n.title, link: n.link, source: n.source, found: kstDay(now) });
   }
   const keepFrom = kstDay(new Date(now.getTime() - 14 * 86400000));
   const out = E.filter((e) => e.date >= keepFrom).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 400);
