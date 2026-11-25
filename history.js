@@ -83,9 +83,56 @@ function updateAnniv(D, now) {
   return A;
 }
 
+// 주요영업처 기사 제목에서 '날짜 + 행사' 찾기 → 캘린더 (뉴스 감지, 정확도 100% 아님)
+const EVENT_WORD = /박람회|전시회|전시|페스티벌|축제|시상식|기념식|컨퍼런스|콘퍼런스|포럼|세미나|론칭|런칭|출시|오픈|개최|개막|팝업|행사|설명회|마라톤|콘서트|공연|쇼케이스|발표회|간담회|기념|창립|출범|기공식|준공식|착공식|오픈런|사전예약|사전 예약/;
+const EVENT_NOT = /주가|목표가|실적|분기|증시|코스피|코스닥|청약|마감시황|리포트|연속|시행|만기|배당|금리|환율|선고|재판|공판|조사|소환/;
+function eventDate(title, iso) {
+  const a = new Date(new Date(iso).getTime() + KST);
+  const ay = a.getUTCFullYear(), am = a.getUTCMonth() + 1, ad = a.getUTCDate();
+  let m = /(\d{1,2})월\s*(\d{1,2})일/.exec(title), mon, day;
+  if (m) { mon = +m[1]; day = +m[2]; }
+  else if ((m = /(?:^|[^\d월.~\-/])(\d{1,2})일(?=\s*(?:부터|까지|~|에|간|\s|,|·|$))/.exec(title))) {
+    // '10일 만에', '3일간' 처럼 기간을 뜻하는 경우 제외
+    const after = title.slice(m.index + m[0].length, m.index + m[0].length + 4);
+    if (/^\s*(만|간|째|동안|연속|새)/.test(after)) return null;
+    day = +m[1]; mon = am;
+    // 월 없이 '○일'만 있으면 이번 달의 오늘 이후 날짜만 인정 (지난 날짜를 다음 달로 넘기지 않음)
+    if (day < ad - 1) return null;
+  }
+  else return null;
+  if (mon > 12) mon -= 12;
+  let y = ay; if (mon < am - 6) y++;
+  const dt = new Date(Date.UTC(y, mon - 1, day));
+  if (dt.getUTCMonth() !== mon - 1 || dt.getUTCDate() !== day) return null;
+  const diff = (dt - Date.UTC(ay, am - 1, ad)) / 86400000;
+  if (diff < -1 || diff > 120) return null; // 지난 행사·너무 먼 날짜 제외
+  return dt.toISOString().slice(0, 10);
+}
+function updateNewsEvents(D, now) {
+  const E = read("newsevents.json", []);
+  const have = new Set(E.map((e) => e.company + norm(e.title)));
+  for (const n of D.news || []) {
+    if (!n.watch || !n.rel || !EVENT_WORD.test(n.title) || EVENT_NOT.test(n.title)) continue;
+    const date = eventDate(n.title, n.date);
+    if (!date) continue;
+    const key = n.company + norm(n.title);
+    if (have.has(key)) continue;
+    // 같은 기업·같은 날짜 행사는 한 건만
+    if (E.some((e) => e.company === n.company && e.date === date)) continue;
+    have.add(key);
+    E.push({ date, company: n.company, title: n.title, link: n.link, source: n.source, found: kstDay(now) });
+  }
+  const keepFrom = kstDay(new Date(now.getTime() - 14 * 86400000));
+  const out = E.filter((e) => e.date >= keepFrom).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 400);
+  write("newsevents.json", out);
+  return out;
+}
+
 module.exports = function updateRecords(D, now = new Date()) {
   updateHistory(D, now);
   const prlog = updatePrlog(D, now);
   const anniv = updateAnniv(D, now);
-  return { prlog, anniv };
+  const newsEvents = updateNewsEvents(D, now);
+  return { prlog, anniv, newsEvents };
 };
+module.exports.eventDate = eventDate;
