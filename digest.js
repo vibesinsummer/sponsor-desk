@@ -81,6 +81,13 @@ function personnelLabel(p) {
   if (first && looksOrg && !NOT_ORG.test(first) && /[가-힣A-Za-z]/.test(first) && first.length <= 20) return first;
   return known;
 }
+// 홍보 관련 인사: 제목에 홍보 직무가 있는지, 이름표는 [인사] 뒤 기관명 또는 제목 맨 앞 단어
+const PR_TITLE = /홍보|커뮤니케이션|대외협력|대변인|브랜드|마케팅|광고|PR/;
+function prLabel(p) {
+  if (/^\[인사\]/.test(p.title)) return cleanLabel(p.title);
+  const first = cleanLabel(p.title.split(/[\s…]/)[0]).replace(/['"‘’“”]/g, "");
+  return first && first.length <= 20 ? first : null;
+}
 function obitLabel(o) {
   if (!/^\[부고\]/.test(o.title)) return null;
   const m = /\(([^)]+)\)/.exec(o.title);
@@ -101,12 +108,15 @@ function build(D, now = new Date(), from = defaultFrom(now)) {
   const seen = new Set(), people = [];
   for (const p of D.personnel || []) {
     if (!inWin(p.time)) continue;
-    const label = personnelLabel(p);
+    // 홍보 관련 인사는 무조건 포함 (기관 종류 무관): 명단에 홍보·커뮤니케이션 등 담당자가 있거나 제목이 홍보 인사
+    const isPR = (p.pr && p.pr.length > 0) || (PR_TITLE.test(p.title) && IS_PERSONNEL.test(p.title));
+    const label = personnelLabel(p) || (isPR ? prLabel(p) : null);
     const base = (x) => x.replace(/그룹$/, "");
     if (label && [...seen].some((x) => base(x) === base(label))) continue;
-    if (!label || seen.has(label) || (!MEDIA_OK.test(label) && (EXCLUDE.test(label) || EXCLUDE_ANY.test(label)))) continue;
+    if (!label || seen.has(label)) continue;
+    if (!isPR && !MEDIA_OK.test(label) && (EXCLUDE.test(label) || EXCLUDE_ANY.test(label))) continue;
     seen.add(label);
-    people.push({ label, link: p.link + "?section=people/personnel" });
+    people.push({ label, link: p.link + "?section=people/personnel", pr: isPR });
   }
   const seenO = new Set(), obits = [];
   for (const o of D.obituary || []) {
