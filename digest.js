@@ -19,17 +19,21 @@
 const cfg = require("./config");
 
 // 기업이 아닌 곳 (기관명 끝말)
-const EXCLUDE = /(부|청|처|위원회|시|도|군|구|공사|공단|대학교|대학|학교|학원|병원|의료원|법원|검찰청|경찰청|국회|교육원|교육청|재단|진흥원|연구원|연구소|공항|항만|신문|일보|방송|뉴스|통신|매거진|미디어|언론|TV|KBS|MBC|SBS|EBS|YTN|CBS|MBN|센터|박물관|미술관|관|원)$/;
+const EXCLUDE = /(부|청|처|위원회|시|도|군|구|공사|공단|대학교|대학|학교|학원|병원|의료원|법원|검찰청|경찰청|국회|교육원|교육청|재단|진흥원|연구원|연구소|공항|항만|신문|일보|방송|뉴스|통신|매거진|미디어|언론|TV|KBS|MBC|SBS|EBS|YTN|CBS|MBN|센터|박물관|미술관|회관|연구원|진흥원|교육원|평가원|인력개발원|의회|구의회)$/;
 // 기업이 아닌 곳 (이름에 들어 있으면 제외)
 const EXCLUDE_ANY = /신문|일보|방송|뉴스|헤럴드|리뷰|타임스|데일리|투데이|저널|미디어|매거진|KBS|MBC|SBS|EBS|YTN|CBS|국회|시청|구청|도청|군청|경찰|검찰|법원|정부|부처|국립|공단|공사$/;
 // 일반 기사 제목 첫 단어가 기관명이 아닌 경우
 const NOT_ORG = /^(차기|신임|새|신규|올해|내년|첫|전|前|현|故|이번|정기|그룹|회장|사장|대표|대기업|재계|기업|금융권|업계|주요|서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)$/;
 // 언론사지만 그동안 공유해 온 곳 (예외로 포함)
 const MEDIA_OK = /^(연합뉴스|연합뉴스TV)$/;
+const ORG_END = /(그룹|전자|은행|증권|보험|생명|화재|카드|건설|제약|바이오|홀딩스|산업|중공업|화학|케미칼|에너지|푸드|식품|통신|텔레콤|칼텍스|백화점|쇼핑|홈쇼핑|리테일|물산|기획|자산운용|운용|캐피탈|금융|지주|라이프|제과|유업|모비스|오일뱅크|웰스토리|엔터|게임즈|소프트|테크|스틸|해운|항공|호텔|SDS|SDI|ENM|E&A|㈜|\(주\))$/;
 const IS_PERSONNEL = /인사|선임|승진|내정|취임|대표|사장|회장|임원|CEO/;
 // 부고: 회장·사장·대표급만
 const OBIT_ROLE = /(부회장|회장|사장|대표이사|대표|의장|창업주|오너)/;
-const OBIT_ROLE_EXCLUDE = /부사장|기자|교수|의원|장관|논설|국장|PD|앵커|변호사|판사|검사|원장|총장|이사장|협회|조합/;
+const OBIT_ROLE_EXCLUDE = /부사장|기자|교수|의원|장관|논설|국장|PD|앵커|변호사|판사|검사|원장|총장|이사장|협회|조합|의회|구청장|시장|군수|교사|학과/;
+// 기업 홍보 라인 (직급 무관하게 포함) — 우리 영업의 실무 상대
+const OBIT_PR = /홍보|커뮤니케이션|대외협력|대외소통|브랜드|마케팅|광고|PR|IR/;
+const OBIT_PR_EXCLUDE = /기자|교수|학과|의원|의회|PD|앵커|논설|강사|연구원|학회/;
 
 const KST = 9 * 3600 * 1000;
 const kst = (d = new Date()) => new Date(d.getTime() + KST); // UTC 필드로 한국 시각을 읽기 위한 변환
@@ -68,9 +72,13 @@ function personnelLabel(p) {
   if (!IS_PERSONNEL.test(t)) return null;
   const first = cleanLabel(t.split(/[\s…]/)[0]).replace(/['"‘’“”]/g, "");
   const known = matchedWord(t);
+  // 맨 앞 단어 자체에 관리 목록 이름이 들어 있으면 그대로 (예: 현대모비스 → '현대차'로 바꾸지 않음)
+  if (first && cfg.companies.some((c) => c.match.some((w) => w.length >= 2 && first.includes(w)))) return first;
+  const afterFirst = t.slice(t.indexOf(first) + first.length, t.indexOf(first) + first.length + 1);
+  const looksOrg = /^[,·…]/.test(afterFirst) || ORG_END.test(first);
   // 첫 단어에 관심 기업 이름이 없고 기사에는 있으면(예: '이재근 KB금융 회장…') 기업 이름을 씀
   if (known && !(first || "").includes(known)) return known;
-  if (first && !NOT_ORG.test(first) && /[가-힣A-Za-z]/.test(first) && first.length <= 20) return first;
+  if (first && looksOrg && !NOT_ORG.test(first) && /[가-힣A-Za-z]/.test(first) && first.length <= 20) return first;
   return known;
 }
 function obitLabel(o) {
@@ -78,9 +86,12 @@ function obitLabel(o) {
   const m = /\(([^)]+)\)/.exec(o.title);
   if (!m) return null;
   const aff = m[1].trim();
-  if (/^(전|前)\s/.test(aff) || OBIT_ROLE_EXCLUDE.test(aff) || !OBIT_ROLE.test(aff)) return null;
+  if (/(^|\s)(전|前)\s/.test(aff)) return null; // 전직 제외
+  const isPR = OBIT_PR.test(aff) && !OBIT_PR_EXCLUDE.test(aff);
+  const isExec = OBIT_ROLE.test(aff) && !OBIT_ROLE_EXCLUDE.test(aff);
+  if (!isPR && !isExec) return null;
   const org = aff.split(/\s+/)[0];
-  if (!org || OBIT_ROLE.test(org) || EXCLUDE.test(org) || EXCLUDE_ANY.test(org) || /스포츠|엔터|매거진/.test(org)) return null;
+  if (!org || NOT_ORG.test(org) || OBIT_ROLE.test(org) || EXCLUDE.test(org) || EXCLUDE_ANY.test(org) || /스포츠|엔터|매거진/.test(org)) return null;
   return org;
 }
 
@@ -91,6 +102,8 @@ function build(D, now = new Date(), from = defaultFrom(now)) {
   for (const p of D.personnel || []) {
     if (!inWin(p.time)) continue;
     const label = personnelLabel(p);
+    const base = (x) => x.replace(/그룹$/, "");
+    if (label && [...seen].some((x) => base(x) === base(label))) continue;
     if (!label || seen.has(label) || (!MEDIA_OK.test(label) && (EXCLUDE.test(label) || EXCLUDE_ANY.test(label)))) continue;
     seen.add(label);
     people.push({ label, link: p.link + "?section=people/personnel" });
